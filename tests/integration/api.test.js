@@ -39,6 +39,7 @@ const runTests = async () => {
 
   const uniqueId = Date.now();
   const testEmail = `tester_${uniqueId}@example.com`;
+  const testPhone = `091${String(uniqueId).slice(-7)}`;
   const testPassword = 'Password123!';
   let authToken = '';
   let classificationId = '';
@@ -64,6 +65,7 @@ const runTests = async () => {
       body: JSON.stringify({
         name: 'Nguyen Van Test',
         email: testEmail,
+        phone: testPhone,
         password: testPassword,
       }),
     });
@@ -72,6 +74,7 @@ const runTests = async () => {
     assert(regData.success === true, 'Register success is true');
     assert(!!regData.data.token, 'JWT Token is generated');
     assert(regData.data.user.email === testEmail, 'User email matches registered email');
+    assert(regData.data.user.phone === `+84${testPhone.slice(1)}`, 'User phone is normalized to +84');
     assert(regData.data.user.password === undefined, 'Password is NOT exposed in response');
 
     // ----------------------------------------------------
@@ -84,6 +87,7 @@ const runTests = async () => {
       body: JSON.stringify({
         name: 'Duplicate User',
         email: testEmail,
+        phone: `098${String(uniqueId).slice(-7)}`,
         password: testPassword,
       }),
     });
@@ -99,7 +103,7 @@ const runTests = async () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: testEmail,
+        identifier: testEmail,
         password: testPassword,
       }),
     });
@@ -110,14 +114,30 @@ const runTests = async () => {
     authToken = loginData.data.token;
 
     // ----------------------------------------------------
-    // 5. Auth Login Invalid Password Test
+    // 5. Auth Login With Phone Test
     // ----------------------------------------------------
-    console.log(yellow('\n[5] Testing POST /api/auth/login (Invalid Password -> 401)'));
+    console.log(yellow('\n[5] Testing POST /api/auth/login (Phone Number)'));
+    const phoneLoginRes = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        identifier: testPhone,
+        password: testPassword,
+      }),
+    });
+    const phoneLoginData = await phoneLoginRes.json();
+    assert(phoneLoginRes.status === 200, `Phone login status code is 200 (got ${phoneLoginRes.status})`);
+    assert(phoneLoginData.success === true, 'Phone login success is true');
+
+    // ----------------------------------------------------
+    // 6. Auth Login Invalid Password Test
+    // ----------------------------------------------------
+    console.log(yellow('\n[6] Testing POST /api/auth/login (Invalid Password -> 401)'));
     const badLoginRes = await fetch(`${baseUrl}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: testEmail,
+        identifier: testEmail,
         password: 'wrong_password',
       }),
     });

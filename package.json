@@ -6,9 +6,12 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "test:unit": "node tests/unit/ai.test.js",
+    "test:unit": "node tests/unit/ai.test.js && node tests/unit/auth.test.js",
     "test:integration": "node tests/integration/api.test.js",
-    "test": "npm run test:unit && npm run test:integration"
+    "test:auth": "node --test tests/integration/auth.test.js",
+    "test:social": "node --test tests/integration/social.test.js",
+    "test": "npm run test:unit && npm run test:auth && npm run test:social && npm run test:integration",
+    "preview": "node tools/auth-preview/server.js"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +22,8 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.1",
+    "google-auth-library": "^11.3.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.10.1",
     "morgan": "^1.12.1",

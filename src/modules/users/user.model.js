@@ -15,12 +15,18 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       index: true,
-      match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address'],
+      maxlength: [254, 'Email cannot exceed 254 characters'],
+      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please enter a valid email address'],
+    },
+    phone: {
+      type: String,
+      trim: true,
+      match: [/^\+84[35789]\d{8}$/, 'Please enter a valid Vietnamese mobile number'],
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
-      minlength: [6, 'Password must be at least 6 characters'],
+      required: function () { return !this.googleId; },
+      minlength: [8, 'Password must be at least 8 characters'],
       select: false,
     },
     role: {
@@ -28,6 +34,8 @@ const userSchema = new mongoose.Schema(
       enum: ['user', 'admin'],
       default: 'user',
     },
+    googleId: { type: String, select: false },
+    emailVerified: { type: Boolean, default: false },
   },
   {
     timestamps: true,
@@ -36,6 +44,7 @@ const userSchema = new mongoose.Schema(
         ret.id = ret._id;
         delete ret._id;
         delete ret.password;
+        delete ret.googleId;
         delete ret.__v;
         return ret;
       },
@@ -45,12 +54,23 @@ const userSchema = new mongoose.Schema(
         ret.id = ret._id;
         delete ret._id;
         delete ret.password;
+        delete ret.googleId;
         delete ret.__v;
         return ret;
       },
     },
   }
 );
+
+// Existing accounts may have no phone. Enforce uniqueness only for stored strings.
+userSchema.index({ phone: 1 }, {
+  unique: true,
+  partialFilterExpression: { phone: { $type: 'string' } },
+});
+userSchema.index({ googleId: 1 }, {
+  unique: true,
+  partialFilterExpression: { googleId: { $type: 'string' } },
+});
 
 const User = mongoose.model('User', userSchema);
 

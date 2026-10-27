@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#007655">
+  <title>EcoSort AI · Đăng nhập</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M20 4c-9-1-16 2-16 9a7 7 0 0 0 12 5c3-3 3-9 4-14Z"/><path d="M7 20c0-5 3-9 8-12"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M4 21v-3a8 8 0 0 1 16 0v3Z"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 5h4M11 19h2"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6l8-4Z"/><path d="m8 12 3 3 5-6"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-7-7 7 7-7 7"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M20 12H4m7-7-7 7 7 7"/></symbol>
+    <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="5" rx="1"/><path d="M5 13v8h14v-8M12 8v13M12 8C3 8 5 0 9 3l3 5Zm0 0c9 0 7-8 3-5l-3 5Z"/></symbol>
+    <symbol id="i-fingerprint" viewBox="0 0 24 24"><path d="M5 12a7 7 0 0 1 14 0M2 12a10 10 0 0 1 20 0M8 12a4 4 0 0 1 8 0c0 5 1 7 3 9M11 12c0 5-1 8-3 10M5 15c0 3-1 5-2 6M14 16c0 3 1 5 2 6"/></symbol>
+    <symbol id="i-robot" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="3"/><path d="M12 2v4M1 11h3m16 0h3M8 16h8M8 10v2m8-2v2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 3H4v18h6m4-14 5 5-5 5M8 12h12"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V10Z"/></symbol>
+  </svg>
+
+  <div class="connection" id="connection" role="status"><span class="connection-dot"></span><span id="connection-label">Đang kết nối backend…</span></div>
+
+  <main class="app-shell">
+    <section id="login-screen" class="screen login-screen" aria-labelledby="login-heading">
+      <header class="brand-header">
+        <div class="brand-mark"><svg class="brand-leaf"><use href="#i-leaf"/></svg><span>EcoSort<span class="brand-ai">AI</span></span><i></i></div>
+        <div class="brand-badge"><svg><use href="#i-robot"/></svg> ECOSORT AI V2.4</div>
+        <p class="brand-tagline">Phân loại rác thông minh cùng AI</p>
+      </header>
+
+      <div class="welcome"><h1 id="login-heading">Chào mừng trở lại!</h1><p>Đăng nhập để tiếp tục hành trình sống xanh &amp; tích điểm thưởng.</p></div>
+
+      <form id="login-form" class="form-card" novalidate>
+        <div class="field">
+          <label for="login-identifier">Email hoặc Số điện thoại <span class="verified"><svg><use href="#i-shield"/></svg> AI Verified</span></label>
+          <div class="input-wrap"><span class="at-icon">@</span><input id="login-identifier" name="identifier" placeholder="Nhập email hoặc số điện thoại" autocomplete="username" required aria-describedby="login-identifier-error"></div>
+          <p class="field-error" id="login-identifier-error"></p>
+        </div>
+        <div class="field">
+          <label for="login-password">Mật khẩu tài khoản</label>
+          <div class="input-wrap"><svg><use href="#i-lock"/></svg><input id="login-password" name="password" type="password" placeholder="Hãy nhập mật khẩu" autocomplete="current-password" required aria-describedby="login-password-error"><button class="eye-button" type="button" data-toggle="login-password" aria-label="Hiện mật khẩu" aria-pressed="false"><svg><use href="#i-eye"/></svg></button></div>
+          <p class="field-error" id="login-password-error"></p>
+        </div>
+        <div class="login-options"><label class="checkbox-label"><input id="remember" type="checkbox" checked> Ghi nhớ email/SĐT</label><button class="text-button unavailable" type="button" data-notice="Chức năng quên mật khẩu chưa được tích hợp trong bản test.">Quên mật khẩu?</button></div>
+        <div id="login-message" class="form-message" role="alert" hidden></div>
+        <button class="primary-button" id="login-submit" type="submit"><svg><use href="#i-leaf"/></svg><span>Đăng nhập</span></button>
+        <button class="biometric-button" type="button" disabled title="Sinh trắc học sẽ được tích hợp trên ứng dụng mobile"><svg><use href="#i-fingerprint"/></svg><span>Đăng nhập nhanh với Face ID / Touch ID</span></button>
+        <p class="unavailable-caption">Sinh trắc học chưa khả dụng trong bản web test</p>
+      </form>
+
+      <div class="divider"><span>Hoặc tiếp tục với</span></div>
+      <div class="social-row"><button class="social-button" type="button" disabled title="Google chưa tích hợp"><span class="google-mark">G</span> Google</button></div>
+      <div class="eco-banner"><div class="eco-icon"><svg><use href="#i-leaf"/></svg></div><div><strong>CỘNG ĐỒNG ECOSORT</strong><p>Mỗi hành động nhỏ, một thay đổi xanh.</p></div><span class="trend">↗</span></div>
+      <p class="switch-prompt">Chưa có tài khoản? <button class="text-button switch-link" type="button" data-screen="register">Đăng ký ngay <svg><use href="#i-arrow"/></svg></button></p>
+      <footer class="security-note"><strong><svg><use href="#i-shield"/></svg> BẢO MẬT TRÊN HÀNH TRÌNH XANH</strong><p>Mật khẩu được băm an toàn. Cùng EcoSort AI<br> xây dựng thói quen sống xanh mỗi ngày.</p></footer>
+    </section>
+
+    <section id="register-screen" class="screen register-screen" aria-labelledby="register-heading" hidden>
+      <div class="register-top"><button class="back-button" type="button" data-screen="login" aria-label="Quay lại đăng nhập"><svg><use href="#i-back"/></svg></button><span class="journey-badge"><svg><use href="#i-leaf"/></svg> HÀNH TRÌNH XANH</span></div>
+      <header class="register-header"><div class="brand-mark small"><svg class="brand-leaf"><use href="#i-leaf"/></svg><span>EcoSort<span class="brand-ai">AI</span></span><span class="points-mini">✦ +50</span></div><h1 id="register-heading">Tạo tài khoản mới</h1><div class="reward-badge"><svg><use href="#i-gift"/></svg> Nhận ngay <strong>+50 Điểm Eco</strong> khởi đầu</div><p class="reward-disclaimer">Điểm thưởng chưa áp dụng trong bản test</p></header>
+
+      <form id="register-form" class="form-card register-card" novalidate>
+        <div class="field"><label for="register-name"><svg><use href="#i-user"/></svg> Họ và tên</label><div class="input-wrap no-leading"><input id="register-name" name="name" placeholder="Nhập tên của bạn" autocomplete="name" maxlength="100" required aria-describedby="register-name-error"></div><p class="field-error" id="register-name-error"></p></div>
+        <div class="field"><label for="register-email"><svg><use href="#i-mail"/></svg> Địa chỉ Email</label><div class="input-wrap no-leading"><input id="register-email" name="email" type="email" placeholder="Nhập email" autocomplete="email" required aria-describedby="register-email-error"></div><p class="field-error" id="register-email-error"></p></div>
+        <div class="field"><label for="register-phone"><svg><use href="#i-phone"/></svg> Số điện thoại di động</label><div class="phone-row"><span class="country-code">+84</span><div class="input-wrap no-leading"><input id="register-phone" name="phone" type="tel" placeholder="Nhập số điện thoại" autocomplete="tel-national" required aria-describedby="register-phone-error"></div></div><p class="field-error" id="register-phone-error"></p></div>
+        <div class="field"><label for="register-password"><svg><use href="#i-lock"/></svg> Mật khẩu</label><div class="input-wrap no-leading"><input id="register-password" name="password" type="password" placeholder="Hãy nhập mật khẩu" autocomplete="new-password" required aria-describedby="register-password-error strength-label"><button class="eye-button" type="button" data-toggle="register-password" aria-label="Hiện mật khẩu" aria-pressed="false"><svg><use href="#i-eye"/></svg></button></div><p class="field-error" id="register-password-error"></p><div class="strength-meta"><span>Độ an toàn mật khẩu</span><strong id="strength-label">Chưa nhập</strong></div><div class="strength-bars" id="strength-bars"><i></i><i></i><i></i><i></i></div></div>
+        <div class="field"><label for="register-confirm"><svg><use href="#i-shield"/></svg> Xác nhận mật khẩu</label><div class="input-wrap no-leading"><input id="register-confirm" name="confirmPassword" type="password" placeholder="Nhập lại mật khẩu" autocomplete="new-password" required aria-describedby="register-confirm-error"></div><p class="field-error" id="register-confirm-error"></p></div>
+        <div class="referral-box"><div class="referral-heading"><label for="referral"><svg><use href="#i-gift"/></svg> Mã giới thiệu bạn bè</label><span>+20 điểm</span></div><div class="referral-input"><input id="referral" placeholder="VD: ECOFRIEND20" disabled><button type="button" disabled>Áp dụng</button></div><p>Mã giới thiệu chưa tích hợp trong bản test</p></div>
+        <label class="terms checkbox-label"><input id="terms" type="checkbox"><span>Tôi đồng ý với <button type="button" class="text-button" data-notice="Điều khoản dịch vụ sẽ được bổ sung trong bản chính thức.">Điều khoản dịch vụ</button> &amp; <button type="button" class="text-button" data-notice="Chính sách quyền riêng tư sẽ được bổ sung trong bản chính thức.">Chính sách quyền riêng tư</button> của EcoSort AI.</span></label>
+        <div id="register-message" class="form-message" role="alert" hidden></div>
+        <button class="primary-button register-submit" id="register-submit" type="submit" disabled><svg><use href="#i-leaf"/></svg><span>Tạo tài khoản &amp; Bắt đầu</span></button>
+      </form>
+      <div class="divider"><span>HOẶC TIẾP TỤC NHANH VỚI</span></div><div class="social-row"><button class="social-button" type="button" disabled title="Google chưa tích hợp"><span class="google-mark">G</span> Google</button></div>
+      <p class="switch-prompt">Đã có tài khoản? <button class="text-button" type="button" data-screen="login">Đăng nhập ngay</button></p>
+    </section>
+
+    <section id="home-screen" class="screen home-screen" aria-labelledby="home-heading" hidden>
+      <header class="home-header"><div class="profile-brand"><svg><use href="#i-leaf"/></svg> EcoSort AI</div><button type="button" class="home-avatar" id="home-avatar" data-screen="profile" aria-label="Mở hồ sơ tài khoản">E</button></header>
+      <div class="home-welcome"><p>Chào <span id="home-name"></span> 👋</p><h1 id="home-heading">Trang chủ</h1><span class="journey-badge"><svg><use href="#i-leaf"/></svg> HÀNH TRÌNH XANH</span></div>
+      <div class="home-placeholder"><div class="home-leaf"><svg><use href="#i-leaf"/></svg></div><h2>Chào mừng đến EcoSort AI</h2><p id="home-auth-message">Bạn đã đăng nhập thành công.</p><p class="home-placeholder-note">Đây là Trang chủ khung để kiểm tra điều hướng. Các chức năng chính sẽ được nhóm tích hợp sau.</p><button type="button" class="primary-button" data-screen="profile"><svg><use href="#i-user"/></svg>Xem hồ sơ của bạn</button></div>
+      <div id="home-message" class="form-message" role="alert" hidden></div>
+      <p class="home-scope-note">Đăng nhập → Trang chủ → Hồ sơ</p>
+    </section>
+
+    <section id="profile-screen" class="screen profile-screen" aria-labelledby="profile-heading" hidden>
+      <div class="profile-brand"><svg><use href="#i-leaf"/></svg> EcoSort AI</div><h1 id="profile-heading">Hồ sơ tài khoản</h1><p class="profile-intro" id="profile-intro">Thông tin và phương thức đăng nhập của bạn.</p>
+      <div class="profile-card"><div class="avatar" id="profile-avatar">E</div><h2 id="profile-name"></h2><p id="profile-email"></p><span class="role-badge" id="profile-role"></span><dl><div><dt>Số điện thoại</dt><dd id="profile-phone"></dd></div><div><dt>Ngày tham gia</dt><dd id="profile-created"></dd></div><div><dt>Phiên đăng nhập</dt><dd id="profile-session"></dd></div></dl></div>
+      <div class="account-linking"><h2>Liên kết đăng nhập</h2><p>Dùng Google có cùng email với tài khoản này.</p><div class="social-row"><button class="social-button" type="button" data-social="google"><span class="google-mark">G</span> Google</button></div></div>
+      <button type="button" id="refresh-profile" class="primary-button"><svg><use href="#i-user"/></svg>Lấy lại hồ sơ</button><div class="form-message" id="profile-message" role="alert" hidden></div><button type="button" id="logout" class="logout-button"><svg><use href="#i-logout"/></svg>Đăng xuất trên trình duyệt này</button><p class="local-session-note">Bản test giữ token trong bộ nhớ của trang. Tải lại trang sẽ cần đăng nhập lại.</p>
+    </section>
+    <nav id="member-nav" class="member-nav" aria-label="Điều hướng tài khoản" hidden>
+      <button type="button" data-screen="home"><svg><use href="#i-home"/></svg><span>Trang chủ</span></button>
+      <button type="button" data-screen="profile"><svg><use href="#i-user"/></svg><span>Hồ sơ</span></button>
+    </nav>
+  </main>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <dialog id="social-setup" class="setup-dialog"><button type="button" id="close-setup" aria-label="Đóng hướng dẫn">×</button><svg><use href="#i-shield"/></svg><h2 id="social-setup-title">Thiết lập đăng nhập thật</h2><p id="social-setup-description"></p><p>Ứng dụng chưa được cấp cấu hình xác thực. Không có tài khoản hoặc phiên đăng nhập giả nào được tạo khi bấm nút này.</p><a id="social-setup-link" target="_blank" rel="noopener noreferrer">Mở trang thiết lập chính thức ↗</a></dialog>
+</body>
+</html>

@@ -157,7 +157,7 @@ MONGODB_URI=mongodb://localhost:27017/waste_classification
 
 # JWT Configuration
 JWT_SECRET=waste_classification_secret_key_2026_super_secure
-JWT_EXPIRES_IN=7d
+JWT_EXPIRES_IN=15m
 
 # File Upload Configuration (5MB = 5242880 bytes)
 MAX_FILE_SIZE=5242880
@@ -235,7 +235,9 @@ docker compose down
   {
     "name": "Nguyen Van A",
     "email": "user@example.com",
-    "password": "Password123"
+    "phone": "0912345678",
+    "password": "Password123",
+    "confirmPassword": "Password123"
   }
   ```
 - **Response (201 Created):**
@@ -248,6 +250,7 @@ docker compose down
         "id": "660c1d2e...",
         "name": "Nguyen Van A",
         "email": "user@example.com",
+        "phone": "+84912345678",
         "role": "user",
         "createdAt": "2026-09-16T...",
         "updatedAt": "2026-09-16T..."
@@ -262,11 +265,36 @@ docker compose down
 - **Body (JSON):**
   ```json
   {
-    "email": "user@example.com",
+    "identifier": "user@example.com",
     "password": "Password123"
   }
   ```
 - **Response (200 OK):** Trả về thông tin User và JWT Token.
+
+`identifier` nhận email hoặc SĐT Việt Nam (ví dụ `0912345678`, `+84912345678`, `84912345678`). API vẫn nhận trường `email` của client cũ hoặc trường `phone`; mỗi request chỉ được gửi một trong ba trường. Email được chuyển thành chữ thường, SĐT được lưu dạng `+84`.
+
+Đăng ký bắt buộc có họ tên (tối đa 100 ký tự), email, SĐT và mật khẩu tối thiểu 8 ký tự, tối đa 72 byte UTF-8 theo giới hạn bcrypt. `confirmPassword` là tùy chọn cho client; nếu gửi lên thì phải khớp mật khẩu. Tài khoản luôn được tạo với role `user`, bất kể role do client gửi. Tài khoản cũ chưa có SĐT vẫn đăng nhập bằng email được.
+
+Mật khẩu được băm bcrypt với cost 12. JWT dùng HS256, chứa `sub`, `role`, `iat`, `exp` và mặc định hết hạn sau 15 phút. Cấu hình `JWT_EXPIRES_IN` ở môi trường chạy có thể ghi đè mặc định; khi chạy production phải cung cấp `JWT_SECRET` riêng. Response vẫn giữ tên trường `data.token` để tương thích với client hiện có.
+
+API đăng ký giới hạn 20 request/IP/15 phút; đăng nhập giới hạn 20 lần thất bại/IP/15 phút. Khi bị giới hạn, server trả `429 TOO_MANY_REQUESTS` và header `Retry-After`. Bộ đếm dùng bộ nhớ của một tiến trình, phù hợp cấu trúc server hiện tại.
+
+Lỗi Auth giữ cấu trúc `success`, `message`, `errors` và thêm `code`: `VALIDATION_ERROR`, `WEAK_PASSWORD`, `EMAIL_EXISTS`, `PHONE_EXISTS`, `INVALID_CREDENTIALS`, `UNAUTHORIZED`, `TOKEN_EXPIRED`, `TOO_MANY_REQUESTS`. Token hết hạn trả `401 TOKEN_EXPIRED`; token sai trả `401 UNAUTHORIZED`.
+
+Nhánh `feature/auth-register_login_api` triển khai đăng ký/đăng nhập bằng mật khẩu. Theo yêu cầu mới nhất, đã bổ sung cả luồng Google tại `/api/auth/social/*`. Google cần cấu hình hợp lệ trong `.env` để bật; không có token hay tài khoản giả khi thiếu cấu hình. Refresh token, `remember_me`, `device_id`, sinh trắc học, quên mật khẩu, mã giới thiệu và điểm thưởng vẫn chưa có hiệu lực.
+
+Social login lưu `googleId` theo định danh `sub` đã xác minh, dùng unique index để đăng nhập lại đúng cùng user. Tài khoản social có thể không có password/phone; tài khoản đăng ký bằng form vẫn bắt buộc email/SĐT/mật khẩu. Hệ thống không tự ghép email: phải đăng nhập tài khoản hiện có trước khi liên kết Google. Challenge gắn với cookie HttpOnly, có state/nonce, hết hạn 10 phút và chỉ dùng một lần. Hướng dẫn thiết lập chi tiết ở [docs/AUTH_GOOGLE.md](docs/AUTH_GOOGLE.md).
+
+Chạy kiểm thử trên macOS với Node.js 20.19 trở lên và MongoDB đang chạy:
+
+```bash
+npm ci
+npm run test:unit
+TEST_MONGODB_URI=mongodb://127.0.0.1:27017/scanwaste_auth_test npm run test:auth
+NODE_ENV=test MONGODB_URI=mongodb://127.0.0.1:27017/scanwaste_system_test npm run test:integration
+```
+
+`test:auth` chạy HTTP thật với MongoDB và tự xóa các user do chính lượt test tạo; không xóa database hay collection. `test:integration` là bộ test toàn hệ thống có tạo user, lịch sử phân loại và ảnh thử, nên sử dụng database test riêng. Sau khi cấu hình `.env`, chạy backend bằng `npm run dev` và thử hai endpoint ở `http://localhost:5000/api/auth`.
 
 ---
 
@@ -284,6 +312,7 @@ docker compose down
       "id": "660c1d2e...",
       "name": "Nguyen Van A",
       "email": "user@example.com",
+      "phone": "+84912345678",
       "role": "user"
     }
   }
@@ -402,3 +431,8 @@ docker compose down
 6. **Classify Waste**: `POST http://localhost:5000/api/classifications` -> Chọn Body `form-data`, key `image` (loại File), chọn ảnh rác từ máy tính và gửi request.
 7. **Get History**: `GET http://localhost:5000/api/history?page=1&limit=10`.
 8. **Get Statistics**: `GET http://localhost:5000/api/statistics`.
+
+
+## Giao diện kiểm tra đăng nhập và hồ sơ
+
+Chạy `npm run preview` ở gốc repo sau khi backend đã chạy. Xem [tools/auth-preview/README.md](tools/auth-preview/README.md) để cấu hình và biết rõ các chức năng chưa triển khai. Giao diện đã nằm cùng nhánh Git với backend; không cần thư mục bên ngoài repo.
