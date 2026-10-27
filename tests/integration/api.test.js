@@ -36,22 +36,66 @@ const runTests = async () => {
   console.log(cyan('🧪 RUNNING SCANWASTE BACKEND INTEGRATION TESTS'));
   console.log(cyan('=============================================\n'));
 
+  const getPythonBinary = () => {
+    if (process.env.PYTHON_BIN) return process.env.PYTHON_BIN;
+    if (process.platform === 'win32') return 'python';
+    const { execSync } = require('child_process');
+    try {
+      execSync('python3 --version', { stdio: 'ignore' });
+      return 'python3';
+    } catch (_) {
+      return 'python';
+    }
+  };
+
   // Ensure AI inference microservice is available
+  let aiReady = false;
   try {
     const aiCheck = await fetch(`${env.AI_SERVICE_URL}/health`);
-    if (!aiCheck.ok) throw new Error('Unhealthy');
-  } catch (err) {
-    console.log(yellow('Starting AI Inference Microservice for integration test suite...'));
-    aiMicroserviceProcess = spawn('python', ['-m', 'uvicorn', 'main:app', '--app-dir', 'ai_service', '--port', '5005'], {
+    if (aiCheck.ok) {
+      aiReady = true;
+      console.log(green('✔ AI Inference Microservice is already running and healthy.'));
+    }
+  } catch (_) {}
+
+  if (!aiReady) {
+    const pythonBin = getPythonBinary();
+    console.log(yellow(`Starting AI Inference Microservice via '${pythonBin}' for integration test suite...`));
+
+    let aiStderr = '';
+    let aiStdout = '';
+    aiMicroserviceProcess = spawn(pythonBin, ['-m', 'uvicorn', 'main:app', '--app-dir', 'ai_service', '--port', '5005'], {
       cwd: process.cwd(),
-      stdio: 'ignore',
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
-    for (let i = 0; i < 20; i++) {
-      await new Promise((r) => setTimeout(r, 250));
+
+    aiMicroserviceProcess.stdout.on('data', (d) => {
+      aiStdout += d.toString();
+    });
+    aiMicroserviceProcess.stderr.on('data', (d) => {
+      aiStderr += d.toString();
+    });
+    aiMicroserviceProcess.on('error', (err) => {
+      console.error(red(`[AI Service Process Error] Failed to spawn '${pythonBin}': ${err.message}`));
+    });
+
+    // Poll health endpoint for up to 15 seconds (30 x 500ms)
+    for (let i = 0; i < 30; i++) {
+      await new Promise((r) => setTimeout(r, 500));
       try {
         const checkRes = await fetch(`${env.AI_SERVICE_URL}/health`);
-        if (checkRes.ok) break;
+        if (checkRes.ok) {
+          aiReady = true;
+          console.log(green(`✔ AI Inference Microservice ready after ${(i + 1) * 500}ms.`));
+          break;
+        }
       } catch (_) {}
+    }
+
+    if (!aiReady) {
+      console.error(red(`[AI Service Timeout] AI Microservice failed to respond at ${env.AI_SERVICE_URL}/health within 15 seconds.`));
+      if (aiStderr) console.error(red(`[AI Service Stderr]:\n${aiStderr.trim()}`));
+      if (aiStdout) console.log(yellow(`[AI Service Stdout]:\n${aiStdout.trim()}`));
     }
   }
 
@@ -276,16 +320,20 @@ const runTests = async () => {
     const aiClassifyData = await aiClassifyRes.json();
     assert(aiClassifyRes.status === 201, `AI Classification status code is 201 (got ${aiClassifyRes.status})`);
     assert(aiClassifyData.success === true, 'AI Classification success is true');
-    assert(!!aiClassifyData.data.classificationId, 'classificationId is returned');
-    assert(SUPPORTED_WASTE_CLASSES.includes(aiClassifyData.data.predictedClass), `predictedClass is supported category (${aiClassifyData.data.predictedClass})`);
-    assert(typeof aiClassifyData.data.predictedClassVi === 'string' && aiClassifyData.data.predictedClassVi.length > 0, 'predictedClassVi has Vietnamese label');
-    assert(typeof aiClassifyData.data.confidence === 'number' && aiClassifyData.data.confidence >= 0 && aiClassifyData.data.confidence <= 1, 'confidence is valid probability [0, 1]');
-    assert(Array.isArray(aiClassifyData.data.topPredictions) && aiClassifyData.data.topPredictions.length === 7, 'topPredictions returns 7 classes');
-    assert(aiClassifyData.data.modelVersion === 'v3', 'modelVersion is v3');
-    assert(aiClassifyData.data.source === 'server', 'source is server');
-    assert(typeof aiClassifyData.data.inferenceTimeMs === 'number', 'inferenceTimeMs is measured');
-    classificationId = aiClassifyData.data.classificationId;
-    predictedClassName = aiClassifyData.data.predictedClass;
+    if (aiClassifyData && aiClassifyData.data) {
+      assert(!!aiClassifyData.data.classificationId, 'classificationId is returned');
+      assert(SUPPORTED_WASTE_CLASSES.includes(aiClassifyData.data.predictedClass), `predictedClass is supported category (${aiClassifyData.data.predictedClass})`);
+      assert(typeof aiClassifyData.data.predictedClassVi === 'string' && aiClassifyData.data.predictedClassVi.length > 0, 'predictedClassVi has Vietnamese label');
+      assert(typeof aiClassifyData.data.confidence === 'number' && aiClassifyData.data.confidence >= 0 && aiClassifyData.data.confidence <= 1, 'confidence is valid probability [0, 1]');
+      assert(Array.isArray(aiClassifyData.data.topPredictions) && aiClassifyData.data.topPredictions.length === 7, 'topPredictions returns 7 classes');
+      assert(aiClassifyData.data.modelVersion === 'v3', 'modelVersion is v3');
+      assert(aiClassifyData.data.source === 'server', 'source is server');
+      assert(typeof aiClassifyData.data.inferenceTimeMs === 'number', 'inferenceTimeMs is measured');
+      classificationId = aiClassifyData.data.classificationId;
+      predictedClassName = aiClassifyData.data.predictedClass;
+    } else {
+      assert(false, `classificationId is returned (response data missing: ${aiClassifyData?.message || 'unknown error'})`);
+    }
 
     // ----------------------------------------------------
     // 8b. Backward Compatibility Test: POST /api/classifications
@@ -303,7 +351,11 @@ const runTests = async () => {
     const legacyData = await legacyRes.json();
     assert(legacyRes.status === 201, `Legacy classification status code is 201 (got ${legacyRes.status})`);
     assert(legacyData.success === true, 'Legacy classification success is true');
-    assert(SUPPORTED_WASTE_CLASSES.includes(legacyData.data.predictedClass), 'Legacy returns valid predicted class');
+    if (legacyData && legacyData.data) {
+      assert(SUPPORTED_WASTE_CLASSES.includes(legacyData.data.predictedClass), 'Legacy returns valid predicted class');
+    } else {
+      assert(false, `Legacy returns valid predicted class (legacyData.data is undefined)`);
+    }
 
     // ----------------------------------------------------
     // 9. Phase 2: POST /api/ai/sync - Single Offline Classification (No Image Required)
@@ -446,29 +498,37 @@ const runTests = async () => {
     assert(userBHistoryData.data.items.length === 0, 'User B has 0 items (cannot see User A data)');
 
     // User B tries to view User A classification detail -> 404
-    const userBDetailRes = await fetch(`${baseUrl}/api/history/${classificationId}`, {
-      headers: { Authorization: `Bearer ${userBAuthToken}` },
-    });
-    assert(userBDetailRes.status === 404, `User B accessing User A item returns 404 (got ${userBDetailRes.status})`);
+    if (!classificationId) {
+      assert(false, 'Skipping User B isolation test: classificationId was not created in step [8]');
+    } else {
+      const userBDetailRes = await fetch(`${baseUrl}/api/history/${classificationId}`, {
+        headers: { Authorization: `Bearer ${userBAuthToken}` },
+      });
+      assert(userBDetailRes.status === 404, `User B accessing User A item returns 404 (got ${userBDetailRes.status})`);
 
-    // User B tries to delete User A classification -> 404
-    const userBDeleteRes = await fetch(`${baseUrl}/api/history/${classificationId}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${userBAuthToken}` },
-    });
-    assert(userBDeleteRes.status === 404, `User B deleting User A item returns 404 (got ${userBDeleteRes.status})`);
+      // User B tries to delete User A classification -> 404
+      const userBDeleteRes = await fetch(`${baseUrl}/api/history/${classificationId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${userBAuthToken}` },
+      });
+      assert(userBDeleteRes.status === 404, `User B deleting User A item returns 404 (got ${userBDeleteRes.status})`);
+    }
 
     // ----------------------------------------------------
     // 10c. History Detail Test (Authorized Owner)
     // ----------------------------------------------------
     console.log(yellow('\n[10c] Testing GET /api/history/:id (Authorized Owner)'));
-    const detailRes = await fetch(`${baseUrl}/api/history/${classificationId}`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
-    const detailData = await detailRes.json();
-    assert(detailRes.status === 200, `History detail status is 200 (got ${detailRes.status})`);
-    assert(detailData.data.id === classificationId, 'History detail matches ID');
-    assert(detailData.data.predictedClass === predictedClassName, 'Detail predicted class matches');
+    if (!classificationId) {
+      assert(false, 'Skipping History detail test: classificationId was not created in step [8]');
+    } else {
+      const detailRes = await fetch(`${baseUrl}/api/history/${classificationId}`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      const detailData = await detailRes.json();
+      assert(detailRes.status === 200, `History detail status is 200 (got ${detailRes.status})`);
+      assert(detailData.data?.id === classificationId, 'History detail matches ID');
+      assert(detailData.data?.predictedClass === predictedClassName, 'Detail predicted class matches');
+    }
 
     // ----------------------------------------------------
     // 10d. DELETE /api/history/:id & /api/ai/history/:id Test
@@ -515,77 +575,83 @@ const runTests = async () => {
     // 15. User AI Feedback Submission: POST /api/ai/feedback
     // ----------------------------------------------------
     console.log(yellow('\n[15] Testing POST /api/ai/feedback (Valid User Feedback)'));
-    const feedbackRes = await fetch(`${baseUrl}/api/ai/feedback`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({
-        classificationId: classificationId,
-        correctClass: 'glass',
-        comment: 'Đây là chai thủy tinh trong suốt, không phải giấy/nhựa',
-        userConsentForTraining: true,
-      }),
-    });
-    const feedbackData = await feedbackRes.json();
-    assert(feedbackRes.status === 201, `Feedback status code is 201 (got ${feedbackRes.status})`);
-    assert(feedbackData.success === true, 'Feedback success is true');
-    assert(feedbackData.data.correctClass === 'glass', 'correctClass is glass');
-    assert(feedbackData.data.status === 'pending', 'Initial status is pending');
-    assert(feedbackData.data.userConsentForTraining === true, 'userConsentForTraining is true');
-    feedbackId = feedbackData.data.id;
+    if (!classificationId) {
+      assert(false, 'Skipping Feedback submission tests: classificationId was not created in step [8]');
+    } else {
+      const feedbackRes = await fetch(`${baseUrl}/api/ai/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          classificationId: classificationId,
+          correctClass: 'glass',
+          comment: 'Đây là chai thủy tinh trong suốt, không phải giấy/nhựa',
+          userConsentForTraining: true,
+        }),
+      });
+      const feedbackData = await feedbackRes.json();
+      assert(feedbackRes.status === 201, `Feedback status code is 201 (got ${feedbackRes.status})`);
+      assert(feedbackData.success === true, 'Feedback success is true');
+      if (feedbackData && feedbackData.data) {
+        assert(feedbackData.data.correctClass === 'glass', 'correctClass is glass');
+        assert(feedbackData.data.status === 'pending', 'Initial status is pending');
+        assert(feedbackData.data.userConsentForTraining === true, 'userConsentForTraining is true');
+        feedbackId = feedbackData.data.id;
+      }
 
-    // ----------------------------------------------------
-    // 15b. Duplicate Feedback Prevention -> 409 Conflict
-    // ----------------------------------------------------
-    console.log(yellow('\n[15b] Testing POST /api/ai/feedback (Duplicate Feedback -> 409)'));
-    const dupFeedbackRes = await fetch(`${baseUrl}/api/ai/feedback`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({
-        classificationId: classificationId,
-        correctClass: 'glass',
-      }),
-    });
-    assert(dupFeedbackRes.status === 409, `Duplicate feedback status code is 409 (got ${dupFeedbackRes.status})`);
+      // ----------------------------------------------------
+      // 15b. Duplicate Feedback Prevention -> 409 Conflict
+      // ----------------------------------------------------
+      console.log(yellow('\n[15b] Testing POST /api/ai/feedback (Duplicate Feedback -> 409)'));
+      const dupFeedbackRes = await fetch(`${baseUrl}/api/ai/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          classificationId: classificationId,
+          correctClass: 'glass',
+        }),
+      });
+      assert(dupFeedbackRes.status === 409, `Duplicate feedback status code is 409 (got ${dupFeedbackRes.status})`);
 
-    // ----------------------------------------------------
-    // 15c. User B cannot submit feedback for User A classification -> 404
-    // ----------------------------------------------------
-    console.log(yellow('\n[15c] Testing POST /api/ai/feedback (Access Denied for other user item -> 404)'));
-    const forbiddenFeedbackRes = await fetch(`${baseUrl}/api/ai/feedback`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${userBAuthToken}`,
-      },
-      body: JSON.stringify({
-        classificationId: classificationId,
-        correctClass: 'glass',
-      }),
-    });
-    assert(forbiddenFeedbackRes.status === 404, `User B feedback on User A classification returns 404 (got ${forbiddenFeedbackRes.status})`);
+      // ----------------------------------------------------
+      // 15c. User B cannot submit feedback for User A classification -> 404
+      // ----------------------------------------------------
+      console.log(yellow('\n[15c] Testing POST /api/ai/feedback (Access Denied for other user item -> 404)'));
+      const forbiddenFeedbackRes = await fetch(`${baseUrl}/api/ai/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userBAuthToken}`,
+        },
+        body: JSON.stringify({
+          classificationId: classificationId,
+          correctClass: 'glass',
+        }),
+      });
+      assert(forbiddenFeedbackRes.status === 404, `User B feedback on User A classification returns 404 (got ${forbiddenFeedbackRes.status})`);
 
-    // ----------------------------------------------------
-    // 15d. Feedback with Invalid Waste Class -> 400
-    // ----------------------------------------------------
-    console.log(yellow('\n[15d] Testing POST /api/ai/feedback (Invalid Class -> 400)'));
-    const invalidClassFeedback = await fetch(`${baseUrl}/api/ai/feedback`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({
-        classificationId: classificationId,
-        correctClass: 'radioactive_waste',
-      }),
-    });
-    assert(invalidClassFeedback.status === 400, `Invalid correctClass returns 400 (got ${invalidClassFeedback.status})`);
+      // ----------------------------------------------------
+      // 15d. Feedback with Invalid Waste Class -> 400
+      // ----------------------------------------------------
+      console.log(yellow('\n[15d] Testing POST /api/ai/feedback (Invalid Class -> 400)'));
+      const invalidClassFeedback = await fetch(`${baseUrl}/api/ai/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          classificationId: classificationId,
+          correctClass: 'radioactive_waste',
+        }),
+      });
+      assert(invalidClassFeedback.status === 400, `Invalid correctClass returns 400 (got ${invalidClassFeedback.status})`);
+    }
 
     // ----------------------------------------------------
     // 16. Admin Feedback Access Control (Regular user -> 403 Forbidden)
@@ -608,39 +674,43 @@ const runTests = async () => {
     assert(Array.isArray(adminFeedbackData.data.items), 'Feedback items is an array');
     assert(adminFeedbackData.data.items.length >= 1, 'Contains at least 1 feedback item');
 
-    const adminFeedbackDetailRes = await fetch(`${baseUrl}/api/admin/ai/feedback/${feedbackId}`, {
-      headers: { Authorization: `Bearer ${adminAuthToken}` },
-    });
-    const adminFeedbackDetailData = await adminFeedbackDetailRes.json();
-    assert(adminFeedbackDetailRes.status === 200, `Admin feedback detail status is 200 (got ${adminFeedbackDetailRes.status})`);
-    assert(adminFeedbackDetailData.data.id === feedbackId, 'Feedback detail ID matches');
-    assert(!!adminFeedbackDetailData.data.userId.email, 'Populates user information');
+    if (!feedbackId) {
+      assert(false, 'Skipping Admin Feedback detail and review tests: feedbackId was not created in step [15]');
+    } else {
+      const adminFeedbackDetailRes = await fetch(`${baseUrl}/api/admin/ai/feedback/${feedbackId}`, {
+        headers: { Authorization: `Bearer ${adminAuthToken}` },
+      });
+      const adminFeedbackDetailData = await adminFeedbackDetailRes.json();
+      assert(adminFeedbackDetailRes.status === 200, `Admin feedback detail status is 200 (got ${adminFeedbackDetailRes.status})`);
+      assert(adminFeedbackDetailData.data?.id === feedbackId, 'Feedback detail ID matches');
+      assert(!!adminFeedbackDetailData.data?.userId?.email, 'Populates user information');
 
-    // ----------------------------------------------------
-    // 18. Admin Review & Approval: PATCH /api/admin/ai/feedback/:id/review
-    // ----------------------------------------------------
-    console.log(yellow('\n[18] Testing PATCH /api/admin/ai/feedback/:id/review (Approval & Dataset Integration)'));
-    const reviewRes = await fetch(`${baseUrl}/api/admin/ai/feedback/${feedbackId}/review`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${adminAuthToken}`,
-      },
-      body: JSON.stringify({
-        status: 'approved',
-        verifiedClass: 'glass',
-        adminNotes: 'Đã xác minh chính xác là chai thủy tinh trong suốt, bổ sung vào tập huấn luyện',
-        addToDataset: true,
-        split: 'train',
-        difficultyTag: 'transparent_pet_vs_glass',
-      }),
-    });
-    const reviewData = await reviewRes.json();
-    assert(reviewRes.status === 200, `Review status code is 200 (got ${reviewRes.status})`);
-    assert(reviewData.data.status === 'approved', 'Status updated to approved');
-    assert(reviewData.data.verifiedClass === 'glass', 'verifiedClass is glass');
-    assert(reviewData.data.addedToDataset === true, 'addedToDataset is true');
-    assert(!!reviewData.data.datasetItemId, 'datasetItemId is generated');
+      // ----------------------------------------------------
+      // 18. Admin Review & Approval: PATCH /api/admin/ai/feedback/:id/review
+      // ----------------------------------------------------
+      console.log(yellow('\n[18] Testing PATCH /api/admin/ai/feedback/:id/review (Approval & Dataset Integration)'));
+      const reviewRes = await fetch(`${baseUrl}/api/admin/ai/feedback/${feedbackId}/review`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminAuthToken}`,
+        },
+        body: JSON.stringify({
+          status: 'approved',
+          verifiedClass: 'glass',
+          adminNotes: 'Đã xác minh chính xác là chai thủy tinh trong suốt, bổ sung vào tập huấn luyện',
+          addToDataset: true,
+          split: 'train',
+          difficultyTag: 'transparent_pet_vs_glass',
+        }),
+      });
+      const reviewData = await reviewRes.json();
+      assert(reviewRes.status === 200, `Review status code is 200 (got ${reviewRes.status})`);
+      assert(reviewData.data?.status === 'approved', 'Status updated to approved');
+      assert(reviewData.data?.verifiedClass === 'glass', 'verifiedClass is glass');
+      assert(reviewData.data?.addedToDataset === true, 'addedToDataset is true');
+      assert(!!reviewData.data?.datasetItemId, 'datasetItemId is generated');
+    }
 
     // ----------------------------------------------------
     // 19. Dataset Upload by Admin: POST /api/admin/ai/datasets
@@ -1218,9 +1288,13 @@ const runTests = async () => {
     if (server) {
       server.close();
     }
-    if (aiMicroserviceProcess) {
+    if (aiMicroserviceProcess && aiMicroserviceProcess.pid) {
       try {
-        aiMicroserviceProcess.kill();
+        if (process.platform === 'win32') {
+          spawn('taskkill', ['/pid', String(aiMicroserviceProcess.pid), '/f', '/t'], { stdio: 'ignore' });
+        } else {
+          aiMicroserviceProcess.kill('SIGTERM');
+        }
       } catch (_) {}
     }
     await mongoose.connection.close();

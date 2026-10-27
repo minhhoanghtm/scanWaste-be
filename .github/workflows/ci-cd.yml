@@ -58,8 +58,35 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
-      - name: 📦 Cài đặt dependencies (clean install)
+      - name: 🐍 Setup Python 3.11 for AI Inference Service
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'ai_service/requirements.txt'
+
+      - name: 📦 Cài đặt Node dependencies (clean install)
         run: npm ci
+
+      - name: 📦 Cài đặt Python AI dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ai_service/requirements.txt
+
+      - name: 🔬 Chạy AI Inference Engine Direct Test
+        run: python ai_service/test_inference.py
+
+      - name: 🚀 Khởi động AI Inference Microservice (FastAPI + TFLite)
+        run: |
+          python -m uvicorn main:app --app-dir ai_service --port 5005 &
+          for i in $(seq 1 30); do
+            if curl -s http://127.0.0.1:5005/health | grep -q "healthy"; then
+              echo "✅ AI Inference Service is UP and healthy on port 5005"
+              break
+            fi
+            echo "Waiting for AI service on port 5005... ($i/30)"
+            sleep 1
+          done
 
       - name: 🔬 Chạy Unit Tests (AI Adapter & Logic cô lập)
         run: npm run test:unit
@@ -73,6 +100,8 @@ jobs:
           JWT_EXPIRES_IN: 7d
           MAX_FILE_SIZE: 5242880
           UPLOAD_DIR: uploads
+          AI_SERVICE_URL: http://127.0.0.1:5005
+          PYTHON_BIN: python
         run: npm run test:integration
 
   # =========================================================================
@@ -89,8 +118,14 @@ jobs:
       - name: 🛠️ Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: 🔨 Build Docker Image (kiểm tra syntax & dependencies)
+      - name: 🔨 Build Backend Docker Image (kiểm tra syntax & dependencies)
         run: docker build -t scanwaste-be:ci-check .
+
+      - name: 🔨 Build AI Service Docker Image
+        run: docker build -t scanwaste-ai:ci-check ./ai_service
+
+      - name: 🐳 Validate Docker Compose configuration
+        run: docker compose config --quiet
 
   # =========================================================================
   # JOB 3: Continuous Deployment (Tự động chạy sau khi merge vào nhánh main)

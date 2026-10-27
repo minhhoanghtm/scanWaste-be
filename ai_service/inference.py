@@ -9,7 +9,14 @@ import time
 import threading
 from typing import Dict, Any, List
 import numpy as np
-import ai_edge_litert.interpreter as litert
+try:
+    import ai_edge_litert.interpreter as litert
+except ImportError:
+    try:
+        import tflite_runtime.interpreter as litert
+    except ImportError:
+        import tensorflow.lite as litert
+
 
 
 DEFAULT_LABELS = [
