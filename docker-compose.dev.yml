@@ -1,0 +1,80 @@
+# Development Docker Compose configuration
+# Exposes internal ports for local debugging (MongoDB Compass & FastAPI Swagger UI)
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: scanwaste-mongodb-dev
+    restart: always
+    ports:
+      - '27017:27017'
+    environment:
+      - MONGO_INITDB_DATABASE=waste_classification
+    volumes:
+      - mongodata_dev:/data/db
+    networks:
+      - scanwaste-network-dev
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'db.runCommand(\"ping\").ok' | mongosh localhost:27017/waste_classification --quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ai-inference:
+    build:
+      context: .
+      dockerfile: ai_service/Dockerfile
+    container_name: scanwaste-ai-inference-dev
+    restart: always
+    ports:
+      - '5005:5005'
+    environment:
+      - AI_SERVICE_PORT=5005
+      - MODEL_VERSION=v3
+    volumes:
+      - ./models:/app/models:ro
+      - uploads_data_dev:/app/uploads:ro
+    networks:
+      - scanwaste-network-dev
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5005/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scanwaste-backend-dev
+    restart: always
+    ports:
+      - '5000:5000'
+    environment:
+      - PORT=5000
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://mongodb:27017/waste_classification
+      - JWT_SECRET=waste_classification_dev_secret_key_2026
+      - JWT_EXPIRES_IN=7d
+      - MAX_FILE_SIZE=5242880
+      - UPLOAD_DIR=uploads
+      - AI_SERVICE_URL=http://ai-inference:5005
+      - AI_PROVIDER=fastapi_tflite
+      - INFERENCE_TIMEOUT_MS=5000
+    volumes:
+      - uploads_data_dev:/app/uploads
+      - ./models:/app/models:ro
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      ai-inference:
+        condition: service_healthy
+    networks:
+      - scanwaste-network-dev
+
+volumes:
+  mongodata_dev:
+  uploads_data_dev:
+
+networks:
+  scanwaste-network-dev:
+    driver: bridge

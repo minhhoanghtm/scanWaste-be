@@ -5,5 +5,6 @@ const authMiddleware = require('../../middlewares/auth.middleware');
 
 router.get('/', authMiddleware, historyController.getHistory);
 router.get('/:id', authMiddleware, historyController.getHistoryDetail);
+router.delete('/:id', authMiddleware, historyController.deleteHistory);
 
 module.exports = router;
