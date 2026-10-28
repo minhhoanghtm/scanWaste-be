@@ -56,7 +56,7 @@ const runTests = async () => {
       aiReady = true;
       console.log(green('✔ AI Inference Microservice is already running and healthy.'));
     }
-  } catch (_) {}
+  } catch (_) { }
 
   if (!aiReady) {
     const pythonBin = getPythonBinary();
@@ -89,7 +89,7 @@ const runTests = async () => {
           console.log(green(`✔ AI Inference Microservice ready after ${(i + 1) * 500}ms.`));
           break;
         }
-      } catch (_) {}
+      } catch (_) { }
     }
 
     if (!aiReady) {
@@ -115,6 +115,7 @@ const runTests = async () => {
 
   // Secondary user for authorization & isolation testing
   const userBEmail = `tester_b_${uniqueId}@example.com`;
+  const userBPhone = `092${String(uniqueId).slice(-7)}`;
   let userBAuthToken = '';
 
   // Admin user for Phase 3 review & dataset testing
@@ -176,10 +177,10 @@ const runTests = async () => {
     const regData = await regRes.json();
     assert(regRes.status === 201, `Register status code is 201 (got ${regRes.status})`);
     assert(regData.success === true, 'Register success is true');
-    assert(!!regData.data.token, 'JWT Token is generated');
-    assert(regData.data.user.email === testEmail, 'User email matches registered email');
-    assert(regData.data.user.phone === `+84${testPhone.slice(1)}`, 'User phone is normalized to +84');
-    assert(regData.data.user.password === undefined, 'Password is NOT exposed in response');
+    assert(!!regData.data?.token, 'JWT Token is generated');
+    assert(regData.data?.user?.email === testEmail, 'User email matches registered email');
+    assert(regData.data?.user?.phone === `+84${testPhone.slice(1)}`, 'User phone is normalized to +84');
+    assert(regData.data?.user?.password === undefined, 'Password is NOT exposed in response');
 
     // ----------------------------------------------------
     // 2b. Auth Register Test (User B for Isolation)
@@ -191,12 +192,13 @@ const runTests = async () => {
       body: JSON.stringify({
         name: 'Tran Thi Isolation',
         email: userBEmail,
+        phone: userBPhone,
         password: testPassword,
       }),
     });
     const regBData = await regBRes.json();
     assert(regBRes.status === 201, `User B register status is 201 (got ${regBRes.status})`);
-    userBAuthToken = regBData.data.token;
+    userBAuthToken = regBData.data?.token;
 
     // ----------------------------------------------------
     // 2c. Auth Register & Setup (Admin User for Phase 3)
@@ -208,6 +210,7 @@ const runTests = async () => {
       body: JSON.stringify({
         name: 'Super Admin',
         email: adminEmail,
+        phone: `093${String(uniqueId).slice(-7)}`,
         password: testPassword,
       }),
     });
@@ -216,10 +219,10 @@ const runTests = async () => {
     const adminLoginRes = await fetch(`${baseUrl}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: adminEmail, password: testPassword }),
+      body: JSON.stringify({ identifier: adminEmail, password: testPassword }),
     });
     const adminLoginData = await adminLoginRes.json();
-    adminAuthToken = adminLoginData.data.token;
+    adminAuthToken = adminLoginData.data?.token;
     assert(!!adminAuthToken, 'Admin JWT token generated successfully');
 
     // ----------------------------------------------------
@@ -255,8 +258,8 @@ const runTests = async () => {
     const loginData = await loginRes.json();
     assert(loginRes.status === 200, `Login status code is 200 (got ${loginRes.status})`);
     assert(loginData.success === true, 'Login success is true');
-    assert(!!loginData.data.token, 'Login returned valid JWT token');
-    authToken = loginData.data.token;
+    assert(!!loginData.data?.token, 'Login returned valid JWT token');
+    authToken = loginData.data?.token;
 
     // ----------------------------------------------------
     // 5. Auth Login With Phone Test
@@ -297,8 +300,8 @@ const runTests = async () => {
     });
     const profileData = await profileRes.json();
     assert(profileRes.status === 200, `Profile status code is 200 (got ${profileRes.status})`);
-    assert(profileData.data.email === testEmail, 'Profile contains correct user email');
-    assert(profileData.data.password === undefined, 'Profile does NOT expose password');
+    assert(profileData.data?.email === testEmail, 'Profile contains correct user email');
+    assert(profileData.data?.password === undefined, 'Profile does NOT expose password');
 
     // ----------------------------------------------------
     // 7. User Profile Test (Unauthorized)
@@ -1315,7 +1318,7 @@ const runTests = async () => {
         } else {
           aiMicroserviceProcess.kill('SIGTERM');
         }
-      } catch (_) {}
+      } catch (_) { }
     }
     await mongoose.connection.close();
 
