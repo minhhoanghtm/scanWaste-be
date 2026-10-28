@@ -11,7 +11,8 @@ const classificationSchema = new mongoose.Schema(
     },
     imageUrl: {
       type: String,
-      required: [true, 'Image URL is required'],
+      default: null,
+      trim: true,
     },
     predictedClass: {
       type: String,
@@ -22,11 +23,44 @@ const classificationSchema = new mongoose.Schema(
       required: [true, 'Predicted class is required'],
       index: true,
     },
+    predictedClassVi: {
+      type: String,
+      default: '',
+    },
     confidence: {
       type: Number,
       default: 0,
       min: [0, 'Confidence cannot be less than 0'],
       max: [1, 'Confidence cannot be greater than 1'],
+    },
+    scores: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
+    modelVersion: {
+      type: String,
+      default: 'v3',
+      index: true,
+    },
+    inferenceTimeMs: {
+      type: Number,
+      default: 0,
+    },
+    classificationSource: {
+      type: String,
+      enum: ['server', 'offline'],
+      default: 'server',
+      index: true,
+    },
+    clientClassificationId: {
+      type: String,
+      index: true,
+      trim: true,
+    },
+    classifiedAt: {
+      type: Date,
+      default: Date.now,
+      index: true,
     },
     metadata: {
       type: mongoose.Schema.Types.Mixed,
@@ -51,6 +85,19 @@ const classificationSchema = new mongoose.Schema(
         return ret;
       },
     },
+  }
+);
+
+// Compound indexes
+classificationSchema.index({ userId: 1, classifiedAt: -1 });
+classificationSchema.index({ userId: 1, createdAt: -1 });
+
+// Unique compound index for idempotency: prevents duplicate offline syncs for the same user
+classificationSchema.index(
+  { userId: 1, clientClassificationId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { clientClassificationId: { $type: 'string' } },
   }
 );
 

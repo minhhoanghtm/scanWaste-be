@@ -436,3 +436,207 @@ NODE_ENV=test MONGODB_URI=mongodb://127.0.0.1:27017/scanwaste_system_test npm ru
 ## Giao diện kiểm tra đăng nhập và hồ sơ
 
 Chạy `npm run preview` ở gốc repo sau khi backend đã chạy. Xem [tools/auth-preview/README.md](tools/auth-preview/README.md) để cấu hình và biết rõ các chức năng chưa triển khai. Giao diện đã nằm cùng nhánh Git với backend; không cần thư mục bên ngoài repo.
+---
+
+## 10. Phase 4 — Model Version Management & AI Statistics
+
+### 10.1 Tổng quan Model Registry & AI Engine
+Hệ thống cung cấp Model Registry quản lý vòng đời các phiên bản mô hình AI (MobileNetV2 V3, V4, V5) phục vụ phân loại 7 nhóm rác thải (`organic`, `cardboard`, `glass`, `metal`, `paper`, `plastic`, `other`).
+
+Các tính năng chính:
+- **Kiểm tra tính toàn vẹn:** Validate magic flatbuffer bytes header (`TFL3`), kích thước file, SHA-256 checksum chống giả mạo hoặc hư hỏng.
+- **Tương thích Tensor:** Kiểm tra input shape `[1, 224, 224, 3]`, output shape `[1, 7]`, dtype `float32`, và thứ tự 7 nhãn strictly index-matched.
+- **Hot-Reload thời gian thực:** Khi admin kích hoạt phiên bản mới cho server, hệ thống gọi `/reload-model` trên FastAPI microservice để swap model in-memory mà không downtime.
+- **Rollback an toàn:** Lưu trữ `previousActiveVersion`, cho phép quay lại phiên bản trước đó ngay lập tức nếu mô hình mới phát sinh vấn đề.
+- **Phân biệt Target Platform:** Phân biệt rõ giữa `server` (hot-reloaded), `mobile_bundled` (yêu cầu đóng gói build ứng dụng mobile/OTA update, không tự nhận là server đã đổi), và `universal`.
+- **Thống kê AI toàn diện (`GET /api/admin/ai/statistics`):** Báo cáo số lượt phân loại, tỷ lệ server/offline, breakdown 7 nhóm rác, thời gian inference trung bình, confusion pairs (các cặp nhãn dễ nhầm như plastic vs glass), time-series theo ngày/tuần/tháng, và phân bố dataset. Tỷ lệ feedback của người dùng được tách biệt nghiêm ngặt với Test Accuracy thực nghiệm.
+
+---
+
+### 10.2 Danh sách Model & Statistics API Endpoints
+
+#### 1. Lấy thông tin mô hình đang kích hoạt (Public/Client)
+- **`GET /api/ai/models/current`**
+- Query params: `platform=server` (hoặc `mobile_bundled`)
+- Response (200 OK):
+  ```json
+  {
+    "success": true,
+    "message": "Active model retrieved successfully",
+    "data": {
+      "id": "670c...",
+      "modelName": "ScanWaste MobileNetV2 V3",
+      "version": "v3",
+      "status": "active",
+      "targetPlatform": "universal",
+      "checksum": "e87cf8c2...",
+      "inputShape": [1, 224, 224, 3],
+      "outputShape": [1, 7],
+      "labels": ["organic", "cardboard", "glass", "metal", "paper", "plastic", "other"],
+      "trainingAccuracy": null,
+      "validationAccuracy": null,
+      "testAccuracy": null
+    }
+  }
+  ```
+
+#### 2. Danh sách tất cả mô hình trong Registry (Admin)
+- **`GET /api/admin/ai/models?status=active&targetPlatform=server&page=1&limit=20`**
+- Headers: `Authorization: Bearer <admin_token>`
+- Response (200 OK):
+  ```json
+  {
+    "success": true,
+    "message": "Model registry retrieved successfully",
+    "data": {
+      "models": [...],
+      "pagination": { "total": 2, "page": 1, "limit": 20, "pages": 1 },
+      "activeModelsCount": 1
+    }
+  }
+  ```
+
+#### 3. Chi tiết mô hình (Admin)
+- **`GET /api/admin/ai/models/:id`**
+- Headers: `Authorization: Bearer <admin_token>`
+
+#### 4. Đăng ký phiên bản mô hình mới (Admin)
+- **`POST /api/admin/ai/models`**
+- Headers: `Authorization: Bearer <admin_token>`, `Content-Type: application/json` (hoặc `multipart/form-data` kèm `modelFile`)
+- Body (JSON):
+  ```json
+  {
+    "modelName": "ScanWaste MobileNetV2 V4",
+    "version": "v4",
+    "artifactPath": "models/scanwaste_mobilenetv2_v4.tflite",
+    "checksum": "sha256_hex_hash_here",
+    "inputShape": [1, 224, 224, 3],
+    "inputDtype": "float32",
+    "outputShape": [1, 7],
+    "outputDtype": "float32",
+    "labels": ["organic", "cardboard", "glass", "metal", "paper", "plastic", "other"],
+    "targetPlatform": "server",
+    "trainingAccuracy": 0.942,
+    "validationAccuracy": 0.915,
+    "testAccuracy": null,
+    "evaluationNotes": "Fine-tuned with reviewed dataset and hard negative samples"
+  }
+  ```
+- Response (201 Created):
+  ```json
+  {
+    "success": true,
+    "message": "AI model registered successfully",
+    "data": {
+      "id": "670d...",
+      "version": "v4",
+      "status": "inactive",
+      "deployStatus": "ready"
+    }
+  }
+  ```
+
+#### 5. Kích hoạt mô hình cho Inference (Admin)
+- **`PATCH /api/admin/ai/models/:id/activate`**
+- Headers: `Authorization: Bearer <admin_token>`
+- Response (200 OK):
+  ```json
+  {
+    "success": true,
+    "message": "Model version v4 hot-reloaded into active inference service runtime.",
+    "data": {
+      "hotReloaded": true,
+      "deployStatus": "hot_reloaded",
+      "previousActiveVersion": "v3",
+      "model": { "id": "670d...", "version": "v4", "status": "active" }
+    }
+  }
+  ```
+
+#### 6. Rollback về phiên bản trước (Admin)
+- **`PATCH /api/admin/ai/models/:id/rollback`**
+- Headers: `Authorization: Bearer <admin_token>`
+- Response (200 OK):
+  ```json
+  {
+    "success": true,
+    "message": "Model version v3 hot-reloaded into active inference service runtime.",
+    "data": {
+      "rolledBackFrom": "v4",
+      "activeVersion": "v3",
+      "hotReloaded": true,
+      "deployStatus": "hot_reloaded"
+    }
+  }
+  ```
+
+#### 7. Báo cáo thống kê AI toàn diện (Admin)
+- **`GET /api/admin/ai/statistics`**
+- Headers: `Authorization: Bearer <admin_token>`
+- Query params hỗ trợ: `modelVersion`, `startDate`, `endDate`
+- Response (200 OK):
+  ```json
+  {
+    "success": true,
+    "message": "Admin AI statistics retrieved successfully",
+    "data": {
+      "totalClassifications": 120,
+      "byCategory": {
+        "plastic": 45,
+        "paper": 20,
+        "glass": 18,
+        "metal": 12,
+        "organic": 15,
+        "cardboard": 8,
+        "other": 2
+      },
+      "bySource": {
+        "server": 90,
+        "offline": 30,
+        "serverPercentage": 75.0,
+        "offlinePercentage": 25.0
+      },
+      "byModelVersion": {
+        "v3": 110,
+        "v4": 10
+      },
+      "averageInferenceTimeMs": 18.5,
+      "feedbackStats": {
+        "totalFeedback": 25,
+        "correctReports": 20,
+        "incorrectReports": 5,
+        "userFeedbackAgreementRate": "80%",
+        "byStatus": { "pending": 2, "reviewed": 3, "approved": 18, "rejected": 2 },
+        "note": "User feedback agreement reflects crowd feedback and is strictly separated from benchmark Test Accuracy."
+      },
+      "confusionPairs": [
+        {
+          "predictedClass": "plastic",
+          "correctClass": "glass",
+          "count": 4,
+          "description": "AI predicted 'plastic', user/reviewer corrected to 'glass'"
+        }
+      ],
+      "timeSeries": {
+        "daily": [{ "date": "2026-10-27", "count": 14 }],
+        "weekly": [{ "week": "2026-W44", "count": 82 }],
+        "monthly": [{ "month": "2026-10", "count": 120 }]
+      },
+      "datasetSummary": {
+        "totalItems": 35,
+        "bySplit": { "train": 25, "val": 7, "test": 3 },
+        "byDifficultyTag": { "standard": 20, "transparent_pet_vs_glass": 15 },
+        "consentGivenCount": 35
+      },
+      "moderatedImagesCount": 45,
+      "activeModelAccuracy": {
+        "modelVersion": "v3",
+        "modelName": "ScanWaste MobileNetV2 V3",
+        "trainingAccuracy": null,
+        "validationAccuracy": null,
+        "testAccuracy": null,
+        "evaluationNotes": "Official test benchmark accuracy is recorded during formal training evaluation, never synthesized."
+      }
+    }
+  }
+  ```

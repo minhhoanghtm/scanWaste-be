@@ -1,0 +1,318 @@
+{
+  "info": {
+    "_postman_id": "scanwaste-be-api-collection-v5",
+    "name": "ScanWaste Backend API (Complete Phase 1-5)",
+    "description": "Production Postman Collection for ScanWaste Backend API, covering Authentication, Waste Classification, Offline Synchronization, Feedback, History, Statistics, Model Registry & Dataset Management.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "classificationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "modelId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. System Health",
+      "item": [
+        {
+          "name": "GET Backend Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/health", "host": ["{{baseUrl}}"], "path": ["api", "health"] }
+          }
+        },
+        {
+          "name": "GET AI Inference Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/ai/health", "host": ["{{baseUrl}}"], "path": ["api", "ai", "health"] }
+          }
+        },
+        {
+          "name": "GET Swagger UI Docs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/docs", "host": ["{{baseUrl}}"], "path": ["api", "docs"] }
+          }
+        },
+        {
+          "name": "GET OpenAPI 3.0 Spec JSON",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/docs/openapi.json", "host": ["{{baseUrl}}"], "path": ["api", "docs", "openapi.json"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.token) { pm.collectionVariables.set('token', res.data.token); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nguyen Van User\",\n  \"email\": \"user@scanwaste.vn\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] }
+          }
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.token) { pm.collectionVariables.set('token', res.data.token); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@scanwaste.vn\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/users/me", "host": ["{{baseUrl}}"], "path": ["api", "users", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. AI Classification & Sync",
+      "item": [
+        {
+          "name": "Classify Waste Image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.classificationId) { pm.collectionVariables.set('classificationId', res.data.classificationId); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "image", "type": "file", "src": "" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/ai/classify", "host": ["{{baseUrl}}"], "path": ["api", "ai", "classify"] }
+          }
+        },
+        {
+          "name": "Sync Offline Classifications",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"clientClassificationId\": \"offline_uuid_sample_001\",\n      \"predictedClass\": \"plastic\",\n      \"confidence\": 0.92,\n      \"offlineTimestamp\": \"2026-10-27T10:00:00.000Z\",\n      \"modelVersion\": \"v3-mobile\"\n    }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ai/sync", "host": ["{{baseUrl}}"], "path": ["api", "ai", "sync"] }
+          }
+        },
+        {
+          "name": "Submit Misclassification Feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classificationId\": \"{{classificationId}}\",\n  \"correctClass\": \"glass\",\n  \"comment\": \"Chai thuy tinh trong suot bi nhan dien nham la plastic\",\n  \"consentGiven\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/ai/feedback", "host": ["{{baseUrl}}"], "path": ["api", "ai", "feedback"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. History & User Statistics",
+      "item": [
+        {
+          "name": "Get Classification History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/history?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "history"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Personal Waste Statistics",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/statistics", "host": ["{{baseUrl}}"], "path": ["api", "statistics"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Model Registry & Admin AI",
+      "item": [
+        {
+          "name": "Get Current Serving Model (Public/Client)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/models/current?platform=server",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "models", "current"],
+              "query": [{ "key": "platform", "value": "server" }]
+            }
+          }
+        },
+        {
+          "name": "List Models (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/admin/ai/models", "host": ["{{baseUrl}}"], "path": ["api", "admin", "ai", "models"] }
+          }
+        },
+        {
+          "name": "Register Model V4 (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.id) { pm.collectionVariables.set('modelId', res.data.id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"modelName\": \"ScanWaste MobileNetV2 V4 Fine-Tuned\",\n  \"version\": \"v4_custom\",\n  \"artifactPath\": \"models/scanwaste_mobilenetv2_v3.tflite\",\n  \"inputShape\": [1, 224, 224, 3],\n  \"inputDtype\": \"float32\",\n  \"outputShape\": [1, 7],\n  \"outputDtype\": \"float32\",\n  \"labels\": [\"organic\", \"cardboard\", \"glass\", \"metal\", \"paper\", \"plastic\", \"other\"],\n  \"targetPlatform\": \"server\",\n  \"trainingAccuracy\": 0.942,\n  \"validationAccuracy\": 0.915,\n  \"testAccuracy\": null,\n  \"evaluationNotes\": \"Fine-tuned on feedback approved images\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/admin/ai/models", "host": ["{{baseUrl}}"], "path": ["api", "admin", "ai", "models"] }
+          }
+        },
+        {
+          "name": "Activate Model (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": { "raw": "{{baseUrl}}/api/admin/ai/models/{{modelId}}/activate", "host": ["{{baseUrl}}"], "path": ["api", "admin", "ai", "models", "{{modelId}}", "activate"] }
+          }
+        },
+        {
+          "name": "Rollback Model (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": { "raw": "{{baseUrl}}/api/admin/ai/models/{{modelId}}/rollback", "host": ["{{baseUrl}}"], "path": ["api", "admin", "ai", "models", "{{modelId}}", "rollback"] }
+          }
+        },
+        {
+          "name": "Get Comprehensive AI Statistics (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/admin/ai/statistics", "host": ["{{baseUrl}}"], "path": ["api", "admin", "ai", "statistics"] }
+          }
+        },
+        {
+          "name": "Export Dataset ZIP (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/admin/ai/datasets/export", "host": ["{{baseUrl}}"], "path": ["api", "admin", "ai", "datasets", "export"] }
+          }
+        }
+      ]
+    }
+  ]
+}

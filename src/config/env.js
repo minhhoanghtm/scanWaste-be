@@ -18,6 +18,9 @@ const env = {
   SOCIAL_PUBLIC_ORIGIN: (process.env.SOCIAL_PUBLIC_ORIGIN || 'http://localhost:5173').replace(/\/$/, ''),
   MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE, 10) || 5 * 1024 * 1024, // 5MB
   UPLOAD_DIR: process.env.UPLOAD_DIR || 'uploads',
+  AI_SERVICE_URL: process.env.AI_SERVICE_URL || 'http://127.0.0.1:5005',
+  AI_PROVIDER: process.env.AI_PROVIDER || 'fastapi_tflite',
+  INFERENCE_TIMEOUT_MS: parseInt(process.env.INFERENCE_TIMEOUT_MS, 10) || 5000,
 };
 
 module.exports = env;

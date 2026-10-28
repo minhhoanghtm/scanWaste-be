@@ -18,5 +18,9 @@ router.post('/social/google', loginLimiter, (req, res, next) => {
 
 router.post('/register', registerLimiter, validateRegister, authController.register);
 router.post('/login', loginLimiter, validateLogin, authController.login);
+const { authLimiter } = require('../../middlewares/rateLimit.middleware');
+
+router.post('/register', authLimiter, validateRegister, authController.register);
+router.post('/login', authLimiter, validateLogin, authController.login);
 
 module.exports = router;
