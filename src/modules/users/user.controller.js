@@ -10,6 +10,25 @@ class UserController {
       next(error);
     }
   }
+
+  async updateMe(req, res, next) {
+    try {
+      const userId = req.user.id || req.user._id;
+      const profile = await userService.updateProfile(
+        userId,
+        req.body || {}
+      );
+
+      return sendSuccess(
+        res,
+        'Update profile successfully',
+        profile,
+        200
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new UserController();
