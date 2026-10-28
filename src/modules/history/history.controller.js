@@ -4,13 +4,8 @@ const { sendSuccess } = require('../../utils/response');
 class HistoryController {
   async getHistory(req, res, next) {
     try {
-      const { page, limit, from, to } = req.query;
-const result = await historyService.getUserHistory(req.user._id, {
-  page,
-  limit,
-  from,
-  to,
-});
+      const { page, limit } = req.query;
+      const result = await historyService.getUserHistory(req.user._id, { page, limit });
       return sendSuccess(res, 'Get history successfully', result, 200);
     } catch (error) {
       next(error);

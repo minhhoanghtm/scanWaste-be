@@ -1,13 +1,11 @@
 const app = require('./app');
 const env = require('./config/env');
 const { connectDB } = require('./config/database');
-const {
-  scheduleVoucherReminderJob,
-} = require('./modules/vouchers/voucher-reminder.service');
+
 const startServer = async () => {
   // 1. Connect Database
   await connectDB();
-const voucherReminderTask = scheduleVoucherReminderJob();
+
   // 2. Start HTTP Server
   const server = app.listen(env.PORT, () => {
     console.log(`=============================================`);
@@ -26,9 +24,6 @@ const voucherReminderTask = scheduleVoucherReminderJob();
 
   // Handle SIGTERM & SIGINT
   const gracefulShutdown = () => {
-    if (voucherReminderTask) {
-  voucherReminderTask.stop();
-}
     console.log('\nReceived shutdown signal. Closing HTTP server...');
     server.close(() => {
       console.log('HTTP server closed.');
