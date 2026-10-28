@@ -1,70 +1,97 @@
 const bcrypt = require('bcryptjs');
 const User = require('../users/user.model');
 const { generateToken } = require('../../utils/jwt');
+const {
+  normalizeEmail,
+  normalizeVietnamesePhone,
+  normalizeLoginIdentifier,
+} = require('./auth.utils');
+
+const createAuthError = (message, statusCode, errorCode) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.errorCode = errorCode;
+  return error;
+};
+
+// Keep the bcrypt work factor identical for missing users and wrong passwords.
+const dummyPasswordHash = bcrypt.hashSync('scanwaste-auth-timing-placeholder', 12);
+
+const serializeUser = (user) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  phone: user.phone,
+  role: user.role,
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
+});
 
 class AuthService {
-  async register({ name, email, password }) {
-    const normalizedEmail = email.toLowerCase().trim();
+  createSession(user) {
+    return {
+      user: serializeUser(user),
+      token: generateToken({ sub: user._id.toString(), role: user.role }),
+    };
+  }
 
-    const existingUser = await User.findOne({ email: normalizedEmail });
+  async register({ name, email, phone, password }) {
+    const normalizedEmail = normalizeEmail(email);
+    const normalizedPhone = normalizeVietnamesePhone(phone);
+
+    const existingUser = await User.findOne({
+      $or: [{ email: normalizedEmail }, { phone: normalizedPhone }],
+    });
     if (existingUser) {
-      const error = new Error('Email is already registered');
-      error.statusCode = 409;
-      throw error;
+      if (existingUser.email === normalizedEmail) {
+        throw createAuthError('Email is already registered', 409, 'EMAIL_EXISTS');
+      }
+
+      throw createAuthError('Phone number is already registered', 409, 'PHONE_EXISTS');
     }
 
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const newUser = await User.create({
       name: name.trim(),
       email: normalizedEmail,
+      phone: normalizedPhone,
       password: hashedPassword,
     });
 
-    const token = generateToken({ userId: newUser._id });
+    const token = generateToken({
+      sub: newUser._id.toString(),
+      role: newUser.role,
+    });
 
     return {
-      user: {
-        id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        createdAt: newUser.createdAt,
-        updatedAt: newUser.updatedAt,
-      },
+      user: serializeUser(newUser),
       token,
     };
   }
 
-  async login({ email, password }) {
-    const normalizedEmail = email.toLowerCase().trim();
-
-    const user = await User.findOne({ email: normalizedEmail }).select('+password');
-    if (!user) {
-      const error = new Error('Invalid email or password');
-      error.statusCode = 401;
-      throw error;
+  async login({ identifier, password }) {
+    const normalizedIdentifier = normalizeLoginIdentifier(identifier);
+    if (!normalizedIdentifier) {
+      throw createAuthError('Invalid email or phone number', 400, 'VALIDATION_ERROR');
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      const error = new Error('Invalid email or password');
-      error.statusCode = 401;
-      throw error;
+    const user = await User.findOne({
+      [normalizedIdentifier.field]: normalizedIdentifier.value,
+    }).select('+password');
+    const isMatch = await bcrypt.compare(password, user?.password || dummyPasswordHash);
+    if (!user || !user.password || !isMatch) {
+      throw createAuthError('Invalid email, phone number, or password', 401, 'INVALID_CREDENTIALS');
     }
 
-    const token = generateToken({ userId: user._id });
+    const token = generateToken({
+      sub: user._id.toString(),
+      role: user.role,
+    });
 
     return {
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      },
+      user: serializeUser(user),
       token,
     };
   }

@@ -91,18 +91,29 @@ jobs:
       - name: 🔬 Chạy Unit Tests (AI Adapter & Logic cô lập)
         run: npm run test:unit
 
-      - name: 🌐 Chạy Integration / API Tests (14 scenarios & DB)
+      - name: 🔐 Chạy Auth API Tests
+        env:
+          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/scanwaste_auth_test
+        run: npm run test:auth
+
+      - name: 🌐 Chạy Integration / API Tests
+        # Includes normal password authentication and the other modules.
         env:
           NODE_ENV: test
           PORT: 5001
           MONGODB_URI: mongodb://127.0.0.1:27017/scanwaste_test
           JWT_SECRET: ci_pipeline_super_secret_jwt_key_2026
-          JWT_EXPIRES_IN: 7d
+          JWT_EXPIRES_IN: 15m
           MAX_FILE_SIZE: 5242880
           UPLOAD_DIR: uploads
           AI_SERVICE_URL: http://127.0.0.1:5005
           PYTHON_BIN: python
         run: npm run test:integration
+
+      - name: 🔐 Chạy Social Auth Security Tests
+        env:
+          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/scanwaste_social_test
+        run: npm run test:social
 
   # =========================================================================
   # JOB 2: Kiểm tra tính toàn vẹn của Dockerfile & Build Container

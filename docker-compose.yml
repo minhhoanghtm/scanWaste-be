@@ -54,7 +54,7 @@ services:
       - NODE_ENV=production
       - MONGODB_URI=mongodb://mongodb:27017/waste_classification
       - JWT_SECRET=waste_classification_docker_secret_key_2026
-      - JWT_EXPIRES_IN=7d
+      - JWT_EXPIRES_IN=15m
       - MAX_FILE_SIZE=5242880
       - UPLOAD_DIR=uploads
       - AI_SERVICE_URL=http://ai-inference:5005
