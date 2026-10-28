@@ -58,8 +58,13 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
-      - name: 📦 Cài đặt dependencies (clean install)
-        run: npm ci
+      - name: 📦 Cài đặt dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: 🔬 Chạy Unit Tests (AI Adapter & Logic cô lập)
         run: npm run test:unit
