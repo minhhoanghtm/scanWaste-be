@@ -7,7 +7,7 @@ const userRoutes = require('../modules/users/user.routes');
 const classificationRoutes = require('../modules/classifications/classification.routes');
 const historyRoutes = require('../modules/history/history.routes');
 const statisticsRoutes = require('../modules/statistics/statistics.routes');
-const voucherWalletRoutes = require('../modules/vouchers/voucher-wallet.routes');
+
 const router = express.Router();
 
 /**
@@ -27,6 +27,5 @@ router.use('/users', userRoutes);
 router.use('/classifications', classificationRoutes);
 router.use('/history', historyRoutes);
 router.use('/statistics', statisticsRoutes);
-router.use('/vouchers', voucherWalletRoutes);
 
 module.exports = router;
