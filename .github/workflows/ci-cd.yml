@@ -34,6 +34,15 @@ jobs:
 
     # Khởi tạo container MongoDB 7.0 cho môi trường test
     services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
       mongodb:
         image: mongo:7.0
         ports:
@@ -118,6 +127,12 @@ jobs:
   # =========================================================================
   # JOB 2: Kiểm tra tính toàn vẹn của Dockerfile & Build Container
   # =========================================================================
+      - name: 🔄 Redis sessions and email OTP integration tests
+        env:
+          REDIS_URL: redis://127.0.0.1:6379
+          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/scanwaste_session_test
+        run: npm run test:session && npm run test:registration && npm run test:login-otp
+
   docker-check:
     name: 🐳 Verify Docker Build
     runs-on: ubuntu-latest
@@ -133,9 +148,15 @@ jobs:
         run: docker build -t scanwaste-be:ci-check .
 
       - name: 🔨 Build AI Service Docker Image
-        run: docker build -t scanwaste-ai:ci-check ./ai_service
+        run: docker build -f ai_service/Dockerfile -t scanwaste-ai:ci-check .
+
+      - name: 🔬 Verify model inference inside AI image
+        run: docker run --rm --entrypoint python scanwaste-ai:ci-check ai_service/test_inference.py
 
       - name: 🐳 Validate Docker Compose configuration
+        env:
+          JWT_SECRET: ci-only-compose-validation-secret
+          OTP_SECRET: ci-only-otp-validation-secret
         run: docker compose config --quiet
 
   # =========================================================================

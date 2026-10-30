@@ -1,23 +1,8 @@
-const { rateLimit } = require('express-rate-limit');
-const { sendError } = require('../../utils/response');
-
-const createAuthLimiter = (limit, skipSuccessfulRequests = false) => rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit,
-  standardHeaders: 'draft-7',
-  legacyHeaders: false,
-  skipSuccessfulRequests,
-  handler: (req, res) => sendError(
-    res,
-    'Too many attempts. Please try again later.',
-    [],
-    429,
-    'TOO_MANY_REQUESTS'
-  ),
-});
-
+const limiter = require('../../middlewares/redis-rate-limit');
 module.exports = {
-  loginLimiter: createAuthLimiter(20, true),
-  registerLimiter: createAuthLimiter(20),
-  socialChallengeLimiter: createAuthLimiter(20),
+  loginLimiter: limiter('login', 20, true),
+  registerLimiter: limiter('register', 20),
+  socialChallengeLimiter: limiter('social', 20),
+  refreshLimiter: limiter('refresh', 120),
+  otpLimiter: limiter('otp', 30),
 };

@@ -1,9 +1,7 @@
 const bcrypt = require('bcryptjs');
 const User = require('../users/user.model');
-const { generateToken } = require('../../utils/jwt');
+const sessions = require('./auth.session');
 const {
-  normalizeEmail,
-  normalizeVietnamesePhone,
   normalizeLoginIdentifier,
 } = require('./auth.utils');
 
@@ -23,52 +21,18 @@ const serializeUser = (user) => ({
   email: user.email,
   phone: user.phone,
   role: user.role,
+  emailVerified: user.emailVerified,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
 
 class AuthService {
-  createSession(user) {
-    return {
-      user: serializeUser(user),
-      token: generateToken({ sub: user._id.toString(), role: user.role }),
-    };
+  async createSession(user) {
+    return { user: serializeUser(user), ...await sessions.create(user) };
   }
 
   async register({ name, email, phone, password }) {
-    const normalizedEmail = normalizeEmail(email);
-    const normalizedPhone = normalizeVietnamesePhone(phone);
-
-    const existingUser = await User.findOne({
-      $or: [{ email: normalizedEmail }, { phone: normalizedPhone }],
-    });
-    if (existingUser) {
-      if (existingUser.email === normalizedEmail) {
-        throw createAuthError('Email is already registered', 409, 'EMAIL_EXISTS');
-      }
-
-      throw createAuthError('Phone number is already registered', 409, 'PHONE_EXISTS');
-    }
-
-    const salt = await bcrypt.genSalt(12);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const newUser = await User.create({
-      name: name.trim(),
-      email: normalizedEmail,
-      phone: normalizedPhone,
-      password: hashedPassword,
-    });
-
-    const token = generateToken({
-      sub: newUser._id.toString(),
-      role: newUser.role,
-    });
-
-    return {
-      user: serializeUser(newUser),
-      token,
-    };
+    return require('./auth.registration').request({ name, email, phone, password });
   }
 
   async login({ identifier, password }) {
@@ -85,15 +49,7 @@ class AuthService {
       throw createAuthError('Invalid email, phone number, or password', 401, 'INVALID_CREDENTIALS');
     }
 
-    const token = generateToken({
-      sub: user._id.toString(),
-      role: user.role,
-    });
-
-    return {
-      user: serializeUser(user),
-      token,
-    };
+    return require('./auth.login-otp').request(user);
   }
 }
 

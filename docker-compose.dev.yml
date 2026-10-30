@@ -1,6 +1,20 @@
 # Development Docker Compose configuration
 # Exposes internal ports for local debugging (MongoDB Compass & FastAPI Swagger UI)
 services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    restart: unless-stopped
+    volumes:
+      - redis_auth_data_dev:/data
+    networks:
+      - scanwaste-network-dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   mongodb:
     image: mongo:7.0
     container_name: scanwaste-mongodb-dev
@@ -54,7 +68,16 @@ services:
       - NODE_ENV=development
       - MONGODB_URI=mongodb://mongodb:27017/waste_classification
       - JWT_SECRET=waste_classification_dev_secret_key_2026
-      - JWT_EXPIRES_IN=7d
+      - JWT_EXPIRES_IN=15m
+      - REDIS_URL=redis://redis:6379
+      - REFRESH_TTL_SECONDS=604800
+      - OTP_SECRET=${OTP_SECRET:-local-compose-otp-change-me}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-}
       - MAX_FILE_SIZE=5242880
       - UPLOAD_DIR=uploads
       - AI_SERVICE_URL=http://ai-inference:5005
@@ -64,6 +87,8 @@ services:
       - uploads_data_dev:/app/uploads
       - ./models:/app/models:ro
     depends_on:
+      redis:
+        condition: service_healthy
       mongodb:
         condition: service_healthy
       ai-inference:
@@ -72,6 +97,7 @@ services:
       - scanwaste-network-dev
 
 volumes:
+  redis_auth_data_dev:
   mongodata_dev:
   uploads_data_dev:
 

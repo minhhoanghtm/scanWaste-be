@@ -18,6 +18,7 @@ class UserService {
       email: user.email,
       phone: user.phone,
       role: user.role,
+      emailVerified: user.emailVerified,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
