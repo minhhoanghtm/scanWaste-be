@@ -6,7 +6,7 @@ class AuthController {
     try {
       const { name, email, phone, password } = req.body;
       const result = await authService.register({ name, email, phone, password });
-      return sendSuccess(res, 'User registered successfully', result, 201);
+      return sendSuccess(res, 'Check your email to complete registration', result, 202);
     } catch (error) {
       next(error);
     }
@@ -16,7 +16,7 @@ class AuthController {
     try {
       const { identifier, password } = req.body;
       const result = await authService.login({ identifier, password });
-      return sendSuccess(res, 'Login successfully', result, 200);
+      return sendSuccess(res, 'Check your email to complete login', result, 202);
     } catch (error) {
       next(error);
     }

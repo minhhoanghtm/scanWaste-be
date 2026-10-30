@@ -50,7 +50,7 @@
           <div class="input-wrap"><svg><use href="#i-lock"/></svg><input id="login-password" name="password" type="password" placeholder="Hãy nhập mật khẩu" autocomplete="current-password" required aria-describedby="login-password-error"><button class="eye-button" type="button" data-toggle="login-password" aria-label="Hiện mật khẩu" aria-pressed="false"><svg><use href="#i-eye"/></svg></button></div>
           <p class="field-error" id="login-password-error"></p>
         </div>
-        <div class="login-options"><label class="checkbox-label"><input id="remember" type="checkbox" checked> Ghi nhớ email/SĐT</label><button class="text-button unavailable" type="button" data-notice="Chức năng quên mật khẩu chưa được tích hợp trong bản test.">Quên mật khẩu?</button></div>
+        <div class="login-options"><label class="checkbox-label"><input id="remember" type="checkbox" checked> Ghi nhớ email/SĐT</label><button class="text-button" id="open-forgot" type="button">Quên mật khẩu?</button></div>
         <div id="login-message" class="form-message" role="alert" hidden></div>
         <button class="primary-button" id="login-submit" type="submit"><svg><use href="#i-leaf"/></svg><span>Đăng nhập</span></button>
         <button class="biometric-button" type="button" disabled title="Sinh trắc học sẽ được tích hợp trên ứng dụng mobile"><svg><use href="#i-fingerprint"/></svg><span>Đăng nhập nhanh với Face ID / Touch ID</span></button>
@@ -83,6 +83,41 @@
       <p class="switch-prompt">Đã có tài khoản? <button class="text-button" type="button" data-screen="login">Đăng nhập ngay</button></p>
     </section>
 
+    <section id="verify-screen" class="screen recovery-screen" aria-labelledby="verify-heading" hidden>
+      <div class="register-top"><button class="back-button" id="verify-back" type="button" aria-label="Về đăng nhập"><svg><use href="#i-back"/></svg></button><span class="journey-badge"><svg><use href="#i-shield"/></svg> BẢO VỆ TÀI KHOẢN</span></div>
+      <header class="recovery-header"><div class="recovery-icon"><svg><use href="#i-mail"/></svg></div><h1 id="verify-heading">Xác minh email</h1><p>Nhập mã gồm 6 số được gửi đến<br><strong id="verify-email"></strong></p></header>
+      <form id="verify-form" class="form-card" novalidate>
+        <div class="field"><label for="verify-otp">Mã xác minh</label><div class="input-wrap no-leading"><input id="verify-otp" class="otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="Nhập mã 6 số" maxlength="6" pattern="[0-9]{6}" required></div><p class="recovery-hint">Mã có hiệu lực trong 5 phút và chỉ dùng một lần.</p></div>
+        <div class="form-message" id="verify-message" role="alert" hidden></div>
+        <button id="verify-submit" class="primary-button" type="submit"><span>Xác minh &amp; tiếp tục</span></button>
+        <button id="verify-resend" class="text-button resend-button" type="button">Gửi mã xác minh</button>
+      </form>
+    </section>
+
+    <section id="forgot-screen" class="screen recovery-screen" aria-labelledby="forgot-heading" hidden>
+      <div class="register-top"><button class="back-button" type="button" data-screen="login" aria-label="Về đăng nhập"><svg><use href="#i-back"/></svg></button><span class="journey-badge"><svg><use href="#i-leaf"/></svg> ECOSORT AI</span></div>
+      <header class="recovery-header"><div class="recovery-icon"><svg><use href="#i-lock"/></svg></div><h1 id="forgot-heading">Quên mật khẩu?</h1><p>Nhập email của bạn để nhận mã đặt lại mật khẩu.</p></header>
+      <form id="forgot-form" class="form-card" novalidate>
+        <div class="field"><label for="forgot-email">Địa chỉ email</label><div class="input-wrap"><svg><use href="#i-mail"/></svg><input id="forgot-email" type="email" autocomplete="email" placeholder="Nhập email" required></div></div>
+        <div class="form-message" id="forgot-message" role="alert" hidden></div>
+        <button id="forgot-submit" class="primary-button" type="submit"><span>Gửi mã xác nhận</span></button>
+      </form>
+      <p class="switch-prompt"><button class="text-button" type="button" data-screen="login">Quay lại đăng nhập</button></p>
+    </section>
+
+    <section id="reset-screen" class="screen recovery-screen" aria-labelledby="reset-heading" hidden>
+      <div class="register-top"><button class="back-button" type="button" data-screen="forgot" aria-label="Đổi địa chỉ email"><svg><use href="#i-back"/></svg></button><span class="journey-badge"><svg><use href="#i-shield"/></svg> BẢO VỆ TÀI KHOẢN</span></div>
+      <header class="recovery-header"><div class="recovery-icon"><svg><use href="#i-lock"/></svg></div><h1 id="reset-heading">Đặt lại mật khẩu</h1><p>Nếu email đã được đăng ký bằng mật khẩu, mã xác nhận sẽ được gửi đến<br><strong id="reset-email"></strong></p></header>
+      <form id="reset-form" class="form-card" novalidate>
+        <div class="field"><label for="reset-otp">Mã xác nhận</label><div class="input-wrap no-leading"><input id="reset-otp" class="otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="Nhập mã 6 số" maxlength="6" required></div></div>
+        <div class="field"><label for="reset-password">Mật khẩu mới</label><div class="input-wrap"><svg><use href="#i-lock"/></svg><input id="reset-password" type="password" autocomplete="new-password" placeholder="Hãy nhập mật khẩu" required><button class="eye-button" type="button" data-toggle="reset-password" aria-label="Hiện mật khẩu" aria-pressed="false"><svg><use href="#i-eye"/></svg></button></div><p class="recovery-hint">Sử dụng ít nhất 8 ký tự.</p></div>
+        <div class="field"><label for="reset-confirm">Xác nhận mật khẩu mới</label><div class="input-wrap no-leading"><input id="reset-confirm" type="password" autocomplete="new-password" placeholder="Nhập lại mật khẩu" required></div></div>
+        <div class="form-message" id="reset-message" role="alert" hidden></div>
+        <button id="reset-submit" class="primary-button" type="submit"><span>Lưu mật khẩu mới</span></button>
+        <button id="reset-resend" class="text-button resend-button" type="button">Gửi lại mã</button>
+      </form>
+    </section>
+
     <section id="home-screen" class="screen home-screen" aria-labelledby="home-heading" hidden>
       <header class="home-header"><div class="profile-brand"><svg><use href="#i-leaf"/></svg> EcoSort AI</div><button type="button" class="home-avatar" id="home-avatar" data-screen="profile" aria-label="Mở hồ sơ tài khoản">E</button></header>
       <div class="home-welcome"><p>Chào <span id="home-name"></span> 👋</p><h1 id="home-heading">Trang chủ</h1><span class="journey-badge"><svg><use href="#i-leaf"/></svg> HÀNH TRÌNH XANH</span></div>
@@ -93,9 +128,10 @@
 
     <section id="profile-screen" class="screen profile-screen" aria-labelledby="profile-heading" hidden>
       <div class="profile-brand"><svg><use href="#i-leaf"/></svg> EcoSort AI</div><h1 id="profile-heading">Hồ sơ tài khoản</h1><p class="profile-intro" id="profile-intro">Thông tin và phương thức đăng nhập của bạn.</p>
-      <div class="profile-card"><div class="avatar" id="profile-avatar">E</div><h2 id="profile-name"></h2><p id="profile-email"></p><span class="role-badge" id="profile-role"></span><dl><div><dt>Số điện thoại</dt><dd id="profile-phone"></dd></div><div><dt>Ngày tham gia</dt><dd id="profile-created"></dd></div><div><dt>Phiên đăng nhập</dt><dd id="profile-session"></dd></div></dl></div>
+      <div class="profile-card"><div class="avatar" id="profile-avatar">E</div><h2 id="profile-name"></h2><p id="profile-email"></p><span class="role-badge" id="profile-role"></span><dl><div><dt>Số điện thoại</dt><dd id="profile-phone"></dd></div><div><dt>Ngày tham gia</dt><dd id="profile-created"></dd></div><div><dt>Email</dt><dd id="profile-email-status"></dd></div><div><dt>Phiên đăng nhập</dt><dd id="profile-session"></dd></div></dl></div>
+      <button id="profile-verify" class="text-button resend-button" type="button" hidden>Xác minh email của bạn</button>
       <div class="account-linking"><h2>Liên kết đăng nhập</h2><p>Dùng Google có cùng email với tài khoản này.</p><div class="social-row"><button class="social-button" type="button" data-social="google"><span class="google-mark">G</span> Google</button></div></div>
-      <button type="button" id="refresh-profile" class="primary-button"><svg><use href="#i-user"/></svg>Lấy lại hồ sơ</button><div class="form-message" id="profile-message" role="alert" hidden></div><button type="button" id="logout" class="logout-button"><svg><use href="#i-logout"/></svg>Đăng xuất trên trình duyệt này</button><p class="local-session-note">Bản test giữ token trong bộ nhớ của trang. Tải lại trang sẽ cần đăng nhập lại.</p>
+      <button type="button" id="refresh-profile" class="primary-button"><svg><use href="#i-user"/></svg>Lấy lại hồ sơ</button><div class="form-message" id="profile-message" role="alert" hidden></div><button type="button" id="logout" class="logout-button"><svg><use href="#i-logout"/></svg>Đăng xuất trên trình duyệt này</button><button type="button" id="logout-all" class="logout-button">Đăng xuất trên tất cả thiết bị</button><p class="local-session-note">Bản test giữ token trong bộ nhớ của trang. Tải lại trang sẽ cần đăng nhập lại.</p>
     </section>
     <nav id="member-nav" class="member-nav" aria-label="Điều hướng tài khoản" hidden>
       <button type="button" data-screen="home"><svg><use href="#i-home"/></svg><span>Trang chủ</span></button>

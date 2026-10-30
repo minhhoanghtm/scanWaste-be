@@ -36,6 +36,7 @@ const userSchema = new mongoose.Schema(
     },
     googleId: { type: String, select: false },
     emailVerified: { type: Boolean, default: false },
+    authVersion: { type: Number, default: 0, select: true },
   },
   {
     timestamps: true,
@@ -45,6 +46,7 @@ const userSchema = new mongoose.Schema(
         delete ret._id;
         delete ret.password;
         delete ret.googleId;
+        delete ret.authVersion;
         delete ret.__v;
         return ret;
       },
@@ -55,6 +57,7 @@ const userSchema = new mongoose.Schema(
         delete ret._id;
         delete ret.password;
         delete ret.googleId;
+        delete ret.authVersion;
         delete ret.__v;
         return ret;
       },

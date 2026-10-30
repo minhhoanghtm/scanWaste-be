@@ -1,3 +1,5 @@
+process.env.SMTP_HOST = ''; // Tests never send email through the user's configured provider.
+process.env.REDIS_PREFIX = `test:auth.test:${process.pid}:`;
 // Runs against a test database; never drops a database or existing collections.
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'auth-integration-test-secret-only';
@@ -12,6 +14,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const app = require('../../src/app');
 const User = require('../../src/modules/users/user.model');
+const { verifiedRegistrationFetch, verifiedLoginFetch } = require('../helpers/verified-registration');
 
 let server;
 let baseUrl;
@@ -30,7 +33,7 @@ const makeRegistration = (overrides = {}) => ({
 });
 
 const request = async (path, body, options = {}) => {
-  const response = await fetch(`${baseUrl}${path}`, {
+  const response = await (path === '/api/auth/register' ? verifiedRegistrationFetch : path === '/api/auth/login' ? verifiedLoginFetch : fetch)(`${baseUrl}${path}`, {
     method: body === undefined ? 'GET' : 'POST',
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -61,6 +64,7 @@ after(async () => {
     await User.deleteMany({ _id: { $in: createdIds } });
   }
   await mongoose.disconnect();
+  await require('../../src/config/redis').closeRedis();
 });
 
 test('register normalizes data, hashes password, prevents assigning admin, issues a 15-minute JWT', async () => {
@@ -122,9 +126,10 @@ test('concurrent registration cannot create duplicate email or phone', async () 
       request('/api/auth/register', registration),
       request('/api/auth/register', other),
     ]);
-    assert.deepEqual(results.map((result) => result.status).sort(), [201, 409]);
-    assert.equal(results.find((result) => result.status === 409).code,
-      duplicateField === 'email' ? 'EMAIL_EXISTS' : 'PHONE_EXISTS');
+    assert.equal(results.filter(result => result.status === 201).length, 1);
+    const denied = results.find(result => result.status !== 201);
+    assert.ok(duplicateField === 'email' ? [409, 429].includes(denied.status) : denied.status === 409);
+    assert.ok(duplicateField === 'email' ? ['EMAIL_EXISTS', 'OTP_COOLDOWN'].includes(denied.code) : denied.code === 'PHONE_EXISTS');
   }
 });
 
@@ -180,7 +185,7 @@ test('wrong password and unknown account return the same credential error', asyn
   assert.equal(missingUser.message, wrongPassword.message);
 });
 
-test('profile accepts new and legacy JWTs; expired and invalid JWTs have stable errors', async () => {
+test('profile requires Redis-backed session JWTs; expired and invalid JWTs have stable errors', async () => {
   const profile = await request('/api/users/me', undefined, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
@@ -188,7 +193,7 @@ test('profile accepts new and legacy JWTs; expired and invalid JWTs have stable 
   assert.equal(profile.data.phone, `+84${currentUser.phone.slice(1)}`);
   const userId = jwt.decode(accessToken).sub;
   for (const [token, status, code] of [
-    [jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '1m' }), 200],
+    [jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '1m' }), 401, 'SESSION_REVOKED'],
     [jwt.sign({ sub: userId }, process.env.JWT_SECRET, { expiresIn: -1 }), 401, 'TOKEN_EXPIRED'],
     [jwt.sign({ sub: userId }, 'wrong-signing-secret'), 401, 'UNAUTHORIZED'],
     [jwt.sign({ sub: 'invalid-object-id' }, process.env.JWT_SECRET), 401, 'UNAUTHORIZED'],

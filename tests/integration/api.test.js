@@ -1,9 +1,12 @@
+process.env.SMTP_HOST = ''; // Tests never send email through the user's configured provider.
+process.env.REDIS_PREFIX = `test:api:${process.pid}:`;
 const mongoose = require('mongoose');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
 const app = require('../../src/app');
+const { verifiedRegistrationFetch, verifiedLoginFetch } = require('../helpers/verified-registration');
 const env = require('../../src/config/env');
 const { connectDB } = require('../../src/config/database');
 const { SUPPORTED_WASTE_CLASSES } = require('../../src/modules/ai/ai.config');
@@ -164,7 +167,7 @@ const runTests = async () => {
     // 2. Auth Register Test (User A)
     // ----------------------------------------------------
     console.log(yellow('\n[2] Testing POST /api/auth/register (User A)'));
-    const regRes = await fetch(`${baseUrl}/api/auth/register`, {
+    const regRes = await verifiedRegistrationFetch(`${baseUrl}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -186,7 +189,7 @@ const runTests = async () => {
     // 2b. Auth Register Test (User B for Isolation)
     // ----------------------------------------------------
     console.log(yellow('\n[2b] Testing POST /api/auth/register (User B for Isolation)'));
-    const regBRes = await fetch(`${baseUrl}/api/auth/register`, {
+    const regBRes = await verifiedRegistrationFetch(`${baseUrl}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -204,7 +207,7 @@ const runTests = async () => {
     // 2c. Auth Register & Setup (Admin User for Phase 3)
     // ----------------------------------------------------
     console.log(yellow('\n[2c] Setting up Admin User for Phase 3'));
-    await fetch(`${baseUrl}/api/auth/register`, {
+    await verifiedRegistrationFetch(`${baseUrl}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -216,7 +219,7 @@ const runTests = async () => {
     });
     // Promote user to admin in DB
     await User.updateOne({ email: adminEmail }, { role: 'admin' });
-    const adminLoginRes = await fetch(`${baseUrl}/api/auth/login`, {
+    const adminLoginRes = await verifiedLoginFetch(`${baseUrl}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier: adminEmail, password: testPassword }),
@@ -229,7 +232,7 @@ const runTests = async () => {
     // 3. Auth Register Duplicate Email Test
     // ----------------------------------------------------
     console.log(yellow('\n[3] Testing POST /api/auth/register (Duplicate Email -> 409)'));
-    const dupRes = await fetch(`${baseUrl}/api/auth/register`, {
+    const dupRes = await verifiedRegistrationFetch(`${baseUrl}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -247,7 +250,7 @@ const runTests = async () => {
     // 4. Auth Login Test
     // ----------------------------------------------------
     console.log(yellow('\n[4] Testing POST /api/auth/login'));
-    const loginRes = await fetch(`${baseUrl}/api/auth/login`, {
+    const loginRes = await verifiedLoginFetch(`${baseUrl}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -265,7 +268,7 @@ const runTests = async () => {
     // 5. Auth Login With Phone Test
     // ----------------------------------------------------
     console.log(yellow('\n[5] Testing POST /api/auth/login (Phone Number)'));
-    const phoneLoginRes = await fetch(`${baseUrl}/api/auth/login`, {
+    const phoneLoginRes = await verifiedLoginFetch(`${baseUrl}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -281,7 +284,7 @@ const runTests = async () => {
     // 6. Auth Login Invalid Password Test
     // ----------------------------------------------------
     console.log(yellow('\n[6] Testing POST /api/auth/login (Invalid Password -> 401)'));
-    const badLoginRes = await fetch(`${baseUrl}/api/auth/login`, {
+    const badLoginRes = await verifiedLoginFetch(`${baseUrl}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1321,6 +1324,7 @@ const runTests = async () => {
       } catch (_) { }
     }
     await mongoose.connection.close();
+    await require('../../src/config/redis').closeRedis();
 
     console.log(cyan('\n---------------------------------------------'));
     console.log(cyan(`📊 Test Summary: ${green(passedCount + ' Passed')}, ${failedCount > 0 ? red(failedCount + ' Failed') : '0 Failed'}`));

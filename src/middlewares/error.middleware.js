@@ -3,6 +3,11 @@ const env = require('../config/env');
 const { sendError } = require('../utils/response');
 
 const errorMiddleware = (err, req, res, next) => {
+  // Redis store libraries may wrap the original connection failure.
+  let cause = err;
+  for (let i = 0; i < 5 && cause; i++, cause = cause.cause) {
+    if (cause.errorCode === 'AUTH_STORE_UNAVAILABLE') { err = cause; break; }
+  }
   let statusCode = err.statusCode || err.status || 500;
   let message = err.message || 'Internal Server Error';
   let errors = err.errors || [];
@@ -68,7 +73,7 @@ const errorMiddleware = (err, req, res, next) => {
     console.error('[Error Middleware]', err);
   }
 
-  const publicServiceErrors = ['SOCIAL_NOT_CONFIGURED', 'PROVIDER_UNAVAILABLE'];
+  const publicServiceErrors = ['SOCIAL_NOT_CONFIGURED', 'PROVIDER_UNAVAILABLE', 'AUTH_STORE_UNAVAILABLE', 'EMAIL_NOT_CONFIGURED'];
   if (statusCode >= 500 && !publicServiceErrors.includes(errorCode)) {
     message = 'Internal Server Error';
     errors = [];

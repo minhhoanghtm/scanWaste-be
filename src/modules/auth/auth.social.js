@@ -141,7 +141,7 @@ async function socialLogin(req, res, next) {
     if (!consumed) throw error('Identity challenge was already used', 401, 'SOCIAL_CHALLENGE_INVALID');
     const user = await resolveAccount(provider, claims, body, req.user);
     res.clearCookie(cookieName(provider), { path: '/api/auth/social' });
-    return sendSuccess(res, 'Social login successful', authService.createSession(user));
+    return sendSuccess(res, 'Social login successful', await authService.createSession(user));
   } catch (err) { return next(err); }
 }
 

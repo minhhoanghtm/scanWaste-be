@@ -6,12 +6,17 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "test:unit": "node tests/unit/ai.test.js && node tests/unit/auth.test.js",
+    "test:unit": "node tests/unit/ai.test.js && node tests/unit/auth.test.js && node --test tests/unit/auth-mail.test.js",
     "test:integration": "node tests/integration/api.test.js",
     "test:auth": "node --test tests/integration/auth.test.js",
     "test:social": "node --test tests/integration/social.test.js",
-    "test": "npm run test:unit && npm run test:auth && npm run test:social && npm run test:integration",
-    "preview": "node tools/auth-preview/server.js"
+    "test": "npm run test:unit && npm run test:auth && npm run test:social && npm run test:integration && npm run test:session && npm run test:registration && npm run test:login-otp",
+    "preview": "node tools/auth-preview/server.js",
+    "test:session": "node --test tests/integration/session-otp.test.js",
+    "mail:local": "node scripts/local-mailbox.js",
+    "mail:setup": "node scripts/setup-gmail.js",
+    "test:registration": "node --test tests/integration/registration.test.js",
+    "test:login-otp": "node --test tests/integration/login-otp.test.js"
   },
   "keywords": [],
   "author": "",
@@ -29,9 +34,13 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.10.1",
     "morgan": "^1.12.1",
-    "multer": "^2.4.0"
+    "multer": "^2.4.0",
+    "nodemailer": "^10.3.0",
+    "rate-limit-redis": "^6.0.2",
+    "redis": "^6.3.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "smtp-server": "^3.21.1"
   }
 }

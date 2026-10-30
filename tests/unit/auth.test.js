@@ -1,3 +1,4 @@
+process.env.SMTP_HOST = ''; // Tests never send email through the user's configured provider.
 const assert = require('node:assert/strict');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -75,6 +76,12 @@ const runAuthTests = async () => {
   assert.equal(duplicateIdentifierLogin.result.nextCalled, false);
   assert.equal(duplicateIdentifierLogin.result.statusCode, 400);
 
+  const sessions = require('../../src/modules/auth/auth.session');
+  const originalSessionCreate = sessions.create;
+  sessions.create = async user => ({ token: require('../../src/utils/jwt').generateToken({ sub: String(user._id), role: user.role }) });
+  const loginOtp = require('../../src/modules/auth/auth.login-otp');
+  const originalLoginOtp = loginOtp.request;
+  loginOtp.request = async user => ({ loginChallengeId: 'unit-test', email: user.email, status: 'pending_otp' });
   const originalFindOne = User.findOne;
   const originalCreate = User.create;
 
@@ -92,29 +99,14 @@ const runAuthTests = async () => {
       };
     };
 
-    const registration = await authService.register({
-      name: 'Nguyen Minh Anh',
-      email: 'minh.anh@example.com',
-      phone: '0912345678',
-      password: 'Password123!',
-    });
-    assert.equal(createdUser.phone, '+84912345678');
-    assert.equal(await bcrypt.compare('Password123!', createdUser.password), true);
-    assert.equal(registration.user.password, undefined);
-    assert.equal(registration.user.phone, '+84912345678');
-    assert.deepEqual(jwt.verify(registration.token, env.JWT_SECRET), {
-      sub: '507f1f77bcf86cd799439011',
-      role: 'user',
-      iat: jwt.decode(registration.token).iat,
-      exp: jwt.decode(registration.token).exp,
-    });
-
+    await assert.rejects(() => authService.register({ name: 'Test', email: 'minh.anh@example.com', phone: '0912345678', password: 'Password123!' }), { errorCode: 'EMAIL_NOT_CONFIGURED' });
+    assert.equal(createdUser, undefined, 'No account before email verification');
     const savedUser = {
       _id: '507f1f77bcf86cd799439011',
       name: 'Nguyen Minh Anh',
       email: 'minh.anh@example.com',
       phone: '+84912345678',
-      password: createdUser.password,
+      password: await bcrypt.hash('Password123!', 12),
       role: 'user',
       createdAt: new Date('2026-10-27T00:00:00.000Z'),
       updatedAt: new Date('2026-10-27T00:00:00.000Z'),
@@ -132,13 +124,15 @@ const runAuthTests = async () => {
       identifier: 'minh.anh@example.com',
       password: 'Password123!',
     });
-    assert.equal(emailLoginResult.user.id, savedUser._id);
+    assert.equal(emailLoginResult.email, savedUser.email);
+    assert.equal(emailLoginResult.token, undefined);
+    assert.equal(emailLoginResult.status, 'pending_otp');
 
     const phoneLoginResult = await authService.login({
       identifier: '0912345678',
       password: 'Password123!',
     });
-    assert.equal(phoneLoginResult.user.phone, savedUser.phone);
+    assert.equal(phoneLoginResult.email, savedUser.email);
 
     await assert.rejects(
       () => authService.login({ identifier: 'minh.anh@example.com', password: 'wrong-password' }),
@@ -156,6 +150,8 @@ const runAuthTests = async () => {
       (error) => error.errorCode === 'EMAIL_EXISTS' && error.statusCode === 409
     );
   } finally {
+    loginOtp.request = originalLoginOtp;
+    sessions.create = originalSessionCreate;
     User.findOne = originalFindOne;
     User.create = originalCreate;
   }

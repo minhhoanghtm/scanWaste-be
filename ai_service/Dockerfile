@@ -8,11 +8,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python dependencies
-COPY requirements.txt .
+COPY ai_service/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files and model
-COPY . .
+# Preserve the source layout used by default model/label paths.
+COPY ai_service/ ./ai_service/
+COPY models/ ./models/
 
 ENV AI_SERVICE_PORT=5005
 ENV PYTHONUNBUFFERED=1
@@ -22,4 +23,4 @@ EXPOSE 5005
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:5005/health || exit 1
 
-CMD ["python", "main.py"]
+CMD ["python", "ai_service/main.py"]

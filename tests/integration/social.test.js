@@ -1,3 +1,5 @@
+process.env.SMTP_HOST = ''; // Tests never send email through the user's configured provider.
+process.env.REDIS_PREFIX = `test:social.test:${process.pid}:`;
 // These tests use local fixtures at the service boundary, never fake a provider login in the app.
 process.env.NODE_ENV = 'test';
 process.env.GOOGLE_CLIENT_ID = 'social-security-test.apps.googleusercontent.com';
@@ -46,6 +48,7 @@ after(async () => {
     await AuthChallenge.deleteMany({ _id: { $in: challengeIds } });
   }
   await mongoose.disconnect();
+  await require('../../src/config/redis').closeRedis();
 });
 
 test('public configuration contains client IDs but never secrets or private key locations', async () => {

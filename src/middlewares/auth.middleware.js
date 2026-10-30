@@ -25,6 +25,8 @@ const authMiddleware = async (req, res, next) => {
       return sendError(res, 'User belonging to this token no longer exists.', [], 401, 'UNAUTHORIZED');
     }
 
+    await require('../modules/auth/auth.session').validate(decoded, user);
+    req.auth = decoded;
     req.user = user;
     next();
   } catch (error) {

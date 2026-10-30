@@ -11,6 +11,10 @@
   },
   "servers": [
     {
+      "url": "/",
+      "description": "Current server"
+    },
+    {
       "url": "http://localhost:5000",
       "description": "Local Development Server"
     },
@@ -29,38 +33,381 @@
       }
     },
     "schemas": {
+      "AuthTokens": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "integer"
+          },
+          "refreshExpiresIn": {
+            "type": "integer"
+          },
+          "tokenType": {
+            "type": "string"
+          }
+        }
+      },
       "StandardResponse": {
         "type": "object",
         "properties": {
-          "success": { "type": "boolean", "example": true },
-          "message": { "type": "string", "example": "Operation completed successfully" },
-          "data": { "type": "object" },
-          "errors": { "type": "array", "items": { "type": "object" }, "example": [] }
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Operation completed successfully"
+          },
+          "data": {
+            "type": "object"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "example": []
+          }
         }
       },
       "ErrorResponse": {
         "type": "object",
         "properties": {
-          "success": { "type": "boolean", "example": false },
-          "message": { "type": "string", "example": "Invalid request or authorization failed" },
-          "errors": { "type": "array", "items": { "type": "string" }, "example": ["Specific validation error"] }
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Invalid request or authorization failed"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "Specific validation error"
+            ]
+          }
         }
       },
       "PredictionItem": {
         "type": "object",
         "properties": {
-          "class": { "type": "string", "example": "plastic" },
-          "classVi": { "type": "string", "example": "Nhựa" },
-          "score": { "type": "number", "example": 0.942 }
+          "class": {
+            "type": "string",
+            "example": "plastic"
+          },
+          "classVi": {
+            "type": "string",
+            "example": "Nhựa"
+          },
+          "score": {
+            "type": "number",
+            "example": 0.942
+          }
         }
       }
     }
   },
   "paths": {
+    "/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Rotate refresh token",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input or OTP"
+          },
+          "401": {
+            "description": "Invalid/expired/revoked token"
+          },
+          "429": {
+            "description": "Rate limit or OTP cooldown"
+          },
+          "503": {
+            "description": "Redis or SMTP unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "refreshToken"
+                ],
+                "properties": {
+                  "refreshToken": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "Single use, absolute session expiry. Reuse of a consumed refresh token revokes that session. Serialize refresh requests in the client."
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Revoke current session",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input or OTP"
+          },
+          "401": {
+            "description": "Invalid/expired/revoked token"
+          },
+          "429": {
+            "description": "Rate limit or OTP cooldown"
+          },
+          "503": {
+            "description": "Redis or SMTP unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/logout-all": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Revoke all sessions",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input or OTP"
+          },
+          "401": {
+            "description": "Invalid/expired/revoked token"
+          },
+          "429": {
+            "description": "Rate limit or OTP cooldown"
+          },
+          "503": {
+            "description": "Redis or SMTP unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/email/send-otp": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Send email verification OTP",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input or OTP"
+          },
+          "401": {
+            "description": "Invalid/expired/revoked token"
+          },
+          "429": {
+            "description": "Rate limit or OTP cooldown"
+          },
+          "503": {
+            "description": "Redis or SMTP unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/email/verify": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Verify email OTP",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input or OTP"
+          },
+          "401": {
+            "description": "Invalid/expired/revoked token"
+          },
+          "429": {
+            "description": "Rate limit or OTP cooldown"
+          },
+          "503": {
+            "description": "Redis or SMTP unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "otp"
+                ],
+                "properties": {
+                  "otp": {
+                    "type": "string",
+                    "pattern": "^[0-9]{6}$"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/password/forgot": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Request password reset (generic response)",
+        "security": [],
+        "responses": {
+          "202": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input or OTP"
+          },
+          "401": {
+            "description": "Invalid/expired/revoked token"
+          },
+          "429": {
+            "description": "Rate limit or OTP cooldown"
+          },
+          "503": {
+            "description": "Redis or SMTP unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/password/reset": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Reset password and revoke all sessions",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid input or OTP"
+          },
+          "401": {
+            "description": "Invalid/expired/revoked token"
+          },
+          "429": {
+            "description": "Rate limit or OTP cooldown"
+          },
+          "503": {
+            "description": "Redis or SMTP unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "otp",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "otp": {
+                    "type": "string",
+                    "pattern": "^[0-9]{6}$"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Health Check",
-        "tags": ["System"],
+        "tags": [
+          "System"
+        ],
         "responses": {
           "200": {
             "description": "Backend and database health status",
@@ -69,7 +416,9 @@
                 "example": {
                   "success": true,
                   "message": "Backend is running",
-                  "data": { "database": "connected" }
+                  "data": {
+                    "database": "connected"
+                  }
                 }
               }
             }
@@ -80,7 +429,9 @@
     "/api/ai/health": {
       "get": {
         "summary": "AI Inference Engine Health Check",
-        "tags": ["System"],
+        "tags": [
+          "System"
+        ],
         "responses": {
           "200": {
             "description": "TFLite inference service readiness",
@@ -104,88 +455,156 @@
     },
     "/api/auth/register": {
       "post": {
-        "summary": "Register a new user account",
-        "tags": ["Authentication"],
+        "description": "Starts email registration. Stores pending data and password hash in Redis for 5 minutes. Does not create a MongoDB user or session. Complete with /api/auth/register/verify using the emailed OTP.",
+        "summary": "Send registration OTP (account not yet created)",
+        "tags": [
+          "Authentication"
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["name", "email", "password"],
+                "required": [
+                  "name",
+                  "email",
+                  "phone",
+                  "password"
+                ],
                 "properties": {
-                  "name": { "type": "string", "example": "Nguyen Van A" },
-                  "email": { "type": "string", "format": "email", "example": "user@scanwaste.vn" },
-                  "password": { "type": "string", "format": "password", "minLength": 6, "example": "Password123!" }
+                  "name": {
+                    "type": "string",
+                    "example": "Nguyen Van A"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "user@scanwaste.vn"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8,
+                    "example": "Password123!"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "0912345678"
+                  },
+                  "confirmPassword": {
+                    "type": "string",
+                    "format": "password"
+                  }
                 }
               }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "User created successfully with JWT token",
+          "202": {
+            "description": "OTP accepted by SMTP; awaiting verification",
             "content": {
               "application/json": {
                 "example": {
                   "success": true,
-                  "message": "User registered successfully",
                   "data": {
-                    "user": { "id": "670c1...", "name": "Nguyen Van A", "email": "user@scanwaste.vn", "role": "user" },
-                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    "registrationId": "<opaque-id>",
+                    "email": "user@example.com",
+                    "status": "pending_verification",
+                    "expiresIn": 300,
+                    "resendAfter": 60
                   }
                 }
               }
             }
           },
-          "409": { "description": "Email already exists" }
+          "409": {
+            "description": "Email or phone already registered"
+          },
+          "429": {
+            "description": "Cooldown or rate limit exceeded"
+          },
+          "503": {
+            "description": "Email or authentication store unavailable; account not created"
+          }
         }
       }
     },
     "/api/auth/login": {
       "post": {
-        "summary": "Authenticate user and issue JWT",
-        "tags": ["Authentication"],
+        "description": "Email/phone + password returns 202 with loginChallengeId and no tokens. Confirm via /api/auth/login/verify to obtain the session. Google login retains its verified-provider flow.",
+        "summary": "Validate password and send login OTP",
+        "tags": [
+          "Authentication"
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["email", "password"],
+                "required": [
+                  "email",
+                  "password"
+                ],
                 "properties": {
-                  "email": { "type": "string", "format": "email", "example": "user@scanwaste.vn" },
-                  "password": { "type": "string", "format": "password", "example": "Password123!" }
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "user@scanwaste.vn"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "Password123!"
+                  }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "Login successful",
+          "202": {
+            "description": "Password valid; OTP sent, no session yet",
             "content": {
               "application/json": {
                 "example": {
                   "success": true,
-                  "message": "Login successfully",
                   "data": {
-                    "user": { "id": "670c1...", "name": "Nguyen Van A", "email": "user@scanwaste.vn", "role": "user" },
-                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    "loginChallengeId": "<opaque-id>",
+                    "email": "user@example.com",
+                    "status": "pending_otp",
+                    "expiresIn": 300,
+                    "resendAfter": 60
                   }
                 }
               }
             }
           },
-          "401": { "description": "Invalid credentials" }
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "429": {
+            "description": "Rate limit or OTP cooldown"
+          },
+          "503": {
+            "description": "SMTP or Redis unavailable"
+          }
         }
       }
     },
     "/api/users/me": {
       "get": {
         "summary": "Get authenticated user profile",
-        "tags": ["Users"],
-        "security": [{ "BearerAuth": [] }],
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "User profile retrieved",
@@ -194,29 +613,48 @@
                 "example": {
                   "success": true,
                   "message": "Get profile successfully",
-                  "data": { "id": "670c1...", "name": "Nguyen Van A", "email": "user@scanwaste.vn", "role": "user" }
+                  "data": {
+                    "id": "670c1...",
+                    "name": "Nguyen Van A",
+                    "email": "user@scanwaste.vn",
+                    "role": "user"
+                  }
                 }
               }
             }
           },
-          "401": { "description": "Unauthorized" }
+          "401": {
+            "description": "Unauthorized"
+          }
         }
       }
     },
     "/api/ai/classify": {
       "post": {
         "summary": "Classify waste image using real MobileNetV2 AI engine",
-        "tags": ["AI Classification"],
-        "security": [{ "BearerAuth": [] }],
+        "tags": [
+          "AI Classification"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": ["image"],
+                "required": [
+                  "image"
+                ],
                 "properties": {
-                  "image": { "type": "string", "format": "binary", "description": "JPEG/PNG/WEBP image <= 5MB" }
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JPEG/PNG/WEBP image <= 5MB"
+                  }
                 }
               }
             }
@@ -237,13 +675,41 @@
                     "predictedClassVi": "Nhựa",
                     "confidence": 0.952,
                     "topPredictions": [
-                      { "class": "plastic", "classVi": "Nhựa", "score": 0.952 },
-                      { "class": "glass", "classVi": "Thủy tinh", "score": 0.024 },
-                      { "class": "metal", "classVi": "Kim loại", "score": 0.012 },
-                      { "class": "paper", "classVi": "Giấy", "score": 0.005 },
-                      { "class": "cardboard", "classVi": "Bìa carton", "score": 0.004 },
-                      { "class": "organic", "classVi": "Rác hữu cơ", "score": 0.002 },
-                      { "class": "other", "classVi": "Khác", "score": 0.001 }
+                      {
+                        "class": "plastic",
+                        "classVi": "Nhựa",
+                        "score": 0.952
+                      },
+                      {
+                        "class": "glass",
+                        "classVi": "Thủy tinh",
+                        "score": 0.024
+                      },
+                      {
+                        "class": "metal",
+                        "classVi": "Kim loại",
+                        "score": 0.012
+                      },
+                      {
+                        "class": "paper",
+                        "classVi": "Giấy",
+                        "score": 0.005
+                      },
+                      {
+                        "class": "cardboard",
+                        "classVi": "Bìa carton",
+                        "score": 0.004
+                      },
+                      {
+                        "class": "organic",
+                        "classVi": "Rác hữu cơ",
+                        "score": 0.002
+                      },
+                      {
+                        "class": "other",
+                        "classVi": "Khác",
+                        "score": 0.001
+                      }
                     ],
                     "disposalTips": [
                       "Làm sạch và làm rỗng chai/hộp nhựa trước khi bỏ rác.",
@@ -258,35 +724,78 @@
               }
             }
           },
-          "400": { "description": "Invalid image or magic bytes mismatch" },
-          "413": { "description": "File exceeds 5MB size limit" }
+          "400": {
+            "description": "Invalid image or magic bytes mismatch"
+          },
+          "413": {
+            "description": "File exceeds 5MB size limit"
+          }
         }
       }
     },
     "/api/ai/sync": {
       "post": {
         "summary": "Synchronize offline classifications made on Mobile",
-        "tags": ["AI Offline Sync"],
-        "security": [{ "BearerAuth": [] }],
+        "tags": [
+          "AI Offline Sync"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["items"],
+                "required": [
+                  "items"
+                ],
                 "properties": {
                   "items": {
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "required": ["clientClassificationId", "predictedClass", "confidence"],
+                      "required": [
+                        "clientClassificationId",
+                        "predictedClass",
+                        "confidence"
+                      ],
                       "properties": {
-                        "clientClassificationId": { "type": "string", "example": "offline_uuid_12345" },
-                        "predictedClass": { "type": "string", "enum": ["organic", "cardboard", "glass", "metal", "paper", "plastic", "other"], "example": "plastic" },
-                        "confidence": { "type": "number", "minimum": 0, "maximum": 1, "example": 0.88 },
-                        "offlineTimestamp": { "type": "string", "format": "date-time", "example": "2026-10-27T10:00:00.000Z" },
-                        "modelVersion": { "type": "string", "example": "v3-mobile" }
+                        "clientClassificationId": {
+                          "type": "string",
+                          "example": "offline_uuid_12345"
+                        },
+                        "predictedClass": {
+                          "type": "string",
+                          "enum": [
+                            "organic",
+                            "cardboard",
+                            "glass",
+                            "metal",
+                            "paper",
+                            "plastic",
+                            "other"
+                          ],
+                          "example": "plastic"
+                        },
+                        "confidence": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1,
+                          "example": 0.88
+                        },
+                        "offlineTimestamp": {
+                          "type": "string",
+                          "format": "date-time",
+                          "example": "2026-10-27T10:00:00.000Z"
+                        },
+                        "modelVersion": {
+                          "type": "string",
+                          "example": "v3-mobile"
+                        }
                       }
                     }
                   }
@@ -306,7 +815,13 @@
                   "data": {
                     "syncedCount": 1,
                     "duplicateCount": 0,
-                    "results": [{ "clientClassificationId": "offline_uuid_12345", "status": "synced", "classificationId": "670c..." }]
+                    "results": [
+                      {
+                        "clientClassificationId": "offline_uuid_12345",
+                        "status": "synced",
+                        "classificationId": "670c..."
+                      }
+                    ]
                   }
                 }
               }
@@ -318,20 +833,51 @@
     "/api/ai/feedback": {
       "post": {
         "summary": "Submit user feedback on misclassified items",
-        "tags": ["AI Feedback"],
-        "security": [{ "BearerAuth": [] }],
+        "tags": [
+          "AI Feedback"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["classificationId", "correctClass"],
+                "required": [
+                  "classificationId",
+                  "correctClass"
+                ],
                 "properties": {
-                  "classificationId": { "type": "string", "example": "670c2f..." },
-                  "correctClass": { "type": "string", "enum": ["organic", "cardboard", "glass", "metal", "paper", "plastic", "other"], "example": "glass" },
-                  "comment": { "type": "string", "example": "Chai thủy tinh trong suốt nhưng AI dự đoán nhầm thành nhựa" },
-                  "consentGiven": { "type": "boolean", "default": true, "example": true }
+                  "classificationId": {
+                    "type": "string",
+                    "example": "670c2f..."
+                  },
+                  "correctClass": {
+                    "type": "string",
+                    "enum": [
+                      "organic",
+                      "cardboard",
+                      "glass",
+                      "metal",
+                      "paper",
+                      "plastic",
+                      "other"
+                    ],
+                    "example": "glass"
+                  },
+                  "comment": {
+                    "type": "string",
+                    "example": "Chai thủy tinh trong suốt nhưng AI dự đoán nhầm thành nhựa"
+                  },
+                  "consentGiven": {
+                    "type": "boolean",
+                    "default": true,
+                    "example": true
+                  }
                 }
               }
             }
@@ -345,7 +891,13 @@
                 "example": {
                   "success": true,
                   "message": "Feedback submitted successfully. Thank you for helping improve ScanWaste AI!",
-                  "data": { "id": "670c...", "status": "pending", "predictedClass": "plastic", "correctClass": "glass", "isCorrect": false }
+                  "data": {
+                    "id": "670c...",
+                    "status": "pending",
+                    "predictedClass": "plastic",
+                    "correctClass": "glass",
+                    "isCorrect": false
+                  }
                 }
               }
             }
@@ -356,11 +908,31 @@
     "/api/history": {
       "get": {
         "summary": "Get user classification history (paginated)",
-        "tags": ["History"],
-        "security": [{ "BearerAuth": [] }],
+        "tags": [
+          "History"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
-          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
-          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } }
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -371,8 +943,20 @@
                   "success": true,
                   "message": "Get history successfully",
                   "data": {
-                    "items": [{ "id": "670c...", "predictedClass": "plastic", "confidence": 0.952, "createdAt": "2026-10-27T10:00:00Z" }],
-                    "pagination": { "page": 1, "limit": 10, "totalCount": 25, "totalPages": 3 }
+                    "items": [
+                      {
+                        "id": "670c...",
+                        "predictedClass": "plastic",
+                        "confidence": 0.952,
+                        "createdAt": "2026-10-27T10:00:00Z"
+                      }
+                    ],
+                    "pagination": {
+                      "page": 1,
+                      "limit": 10,
+                      "totalCount": 25,
+                      "totalPages": 3
+                    }
                   }
                 }
               }
@@ -384,8 +968,14 @@
     "/api/statistics": {
       "get": {
         "summary": "Get personal waste statistics for authenticated user",
-        "tags": ["Statistics"],
-        "security": [{ "BearerAuth": [] }],
+        "tags": [
+          "Statistics"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "User waste breakdown",
@@ -394,7 +984,16 @@
                 "example": {
                   "success": true,
                   "message": "Get statistics successfully",
-                  "data": { "total": 15, "plastic": 7, "paper": 3, "glass": 2, "metal": 1, "organic": 1, "cardboard": 1, "other": 0 }
+                  "data": {
+                    "total": 15,
+                    "plastic": 7,
+                    "paper": 3,
+                    "glass": 2,
+                    "metal": 1,
+                    "organic": 1,
+                    "cardboard": 1,
+                    "other": 0
+                  }
                 }
               }
             }
@@ -405,9 +1004,22 @@
     "/api/ai/models/current": {
       "get": {
         "summary": "Get currently active AI model metadata",
-        "tags": ["Model Registry"],
+        "tags": [
+          "Model Registry"
+        ],
         "parameters": [
-          { "name": "platform", "in": "query", "schema": { "type": "string", "enum": ["server", "mobile_bundled"], "default": "server" } }
+          {
+            "name": "platform",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "server",
+                "mobile_bundled"
+              ],
+              "default": "server"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -424,9 +1036,25 @@
                     "status": "active",
                     "targetPlatform": "universal",
                     "checksum": "e87cf8c2...",
-                    "inputShape": [1, 224, 224, 3],
-                    "outputShape": [1, 7],
-                    "labels": ["organic", "cardboard", "glass", "metal", "paper", "plastic", "other"],
+                    "inputShape": [
+                      1,
+                      224,
+                      224,
+                      3
+                    ],
+                    "outputShape": [
+                      1,
+                      7
+                    ],
+                    "labels": [
+                      "organic",
+                      "cardboard",
+                      "glass",
+                      "metal",
+                      "paper",
+                      "plastic",
+                      "other"
+                    ],
                     "trainingAccuracy": null,
                     "validationAccuracy": null,
                     "testAccuracy": null
@@ -441,88 +1069,251 @@
     "/api/admin/ai/models": {
       "get": {
         "summary": "List all models in registry (Admin only)",
-        "tags": ["Admin AI Management"],
-        "security": [{ "BearerAuth": [] }],
+        "tags": [
+          "Admin AI Management"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
-          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["active", "inactive", "deprecated"] } },
-          { "name": "targetPlatform", "in": "query", "schema": { "type": "string", "enum": ["server", "mobile_bundled", "universal"] } }
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "inactive",
+                "deprecated"
+              ]
+            }
+          },
+          {
+            "name": "targetPlatform",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "server",
+                "mobile_bundled",
+                "universal"
+              ]
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Models list with pagination and active counts" },
-          "403": { "description": "Forbidden - Admin required" }
+          "200": {
+            "description": "Models list with pagination and active counts"
+          },
+          "403": {
+            "description": "Forbidden - Admin required"
+          }
         }
       },
       "post": {
         "summary": "Register a new AI model version (Admin only)",
-        "tags": ["Admin AI Management"],
-        "security": [{ "BearerAuth": [] }],
+        "tags": [
+          "Admin AI Management"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["modelName", "version", "artifactPath"],
+                "required": [
+                  "modelName",
+                  "version",
+                  "artifactPath"
+                ],
                 "properties": {
-                  "modelName": { "type": "string", "example": "ScanWaste MobileNetV2 V4" },
-                  "version": { "type": "string", "example": "v4" },
-                  "artifactPath": { "type": "string", "example": "models/scanwaste_mobilenetv2_v4.tflite" },
-                  "checksum": { "type": "string", "example": "e87cf8c2..." },
-                  "inputShape": { "type": "array", "items": { "type": "number" }, "default": [1, 224, 224, 3] },
-                  "outputShape": { "type": "array", "items": { "type": "number" }, "default": [1, 7] },
-                  "labels": { "type": "array", "items": { "type": "string" } },
-                  "targetPlatform": { "type": "string", "enum": ["server", "mobile_bundled", "universal"], "default": "server" },
-                  "trainingAccuracy": { "type": "number", "nullable": true, "example": 0.942 },
-                  "validationAccuracy": { "type": "number", "nullable": true, "example": 0.915 },
-                  "testAccuracy": { "type": "number", "nullable": true, "default": null }
+                  "modelName": {
+                    "type": "string",
+                    "example": "ScanWaste MobileNetV2 V4"
+                  },
+                  "version": {
+                    "type": "string",
+                    "example": "v4"
+                  },
+                  "artifactPath": {
+                    "type": "string",
+                    "example": "models/scanwaste_mobilenetv2_v4.tflite"
+                  },
+                  "checksum": {
+                    "type": "string",
+                    "example": "e87cf8c2..."
+                  },
+                  "inputShape": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "default": [
+                      1,
+                      224,
+                      224,
+                      3
+                    ]
+                  },
+                  "outputShape": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "default": [
+                      1,
+                      7
+                    ]
+                  },
+                  "labels": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "targetPlatform": {
+                    "type": "string",
+                    "enum": [
+                      "server",
+                      "mobile_bundled",
+                      "universal"
+                    ],
+                    "default": "server"
+                  },
+                  "trainingAccuracy": {
+                    "type": "number",
+                    "nullable": true,
+                    "example": 0.942
+                  },
+                  "validationAccuracy": {
+                    "type": "number",
+                    "nullable": true,
+                    "example": 0.915
+                  },
+                  "testAccuracy": {
+                    "type": "number",
+                    "nullable": true,
+                    "default": null
+                  }
                 }
               }
             }
           }
         },
         "responses": {
-          "201": { "description": "Model version registered successfully with inactive status" },
-          "400": { "description": "Invalid metadata, incompatible tensor shapes, or checksum mismatch" },
-          "409": { "description": "Version already exists" }
+          "201": {
+            "description": "Model version registered successfully with inactive status"
+          },
+          "400": {
+            "description": "Invalid metadata, incompatible tensor shapes, or checksum mismatch"
+          },
+          "409": {
+            "description": "Version already exists"
+          }
         }
       }
     },
     "/api/admin/ai/models/{id}/activate": {
       "patch": {
         "summary": "Activate AI model and hot-reload inference engine (Admin only)",
-        "tags": ["Admin AI Management"],
-        "security": [{ "BearerAuth": [] }],
+        "tags": [
+          "Admin AI Management"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Model activated and hot-reloaded into FastAPI memory without downtime" },
-          "404": { "description": "Model ID not found" }
+          "200": {
+            "description": "Model activated and hot-reloaded into FastAPI memory without downtime"
+          },
+          "404": {
+            "description": "Model ID not found"
+          }
         }
       }
     },
     "/api/admin/ai/models/{id}/rollback": {
       "patch": {
         "summary": "Rollback to the previous active model version (Admin only)",
-        "tags": ["Admin AI Management"],
-        "security": [{ "BearerAuth": [] }],
+        "tags": [
+          "Admin AI Management"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Model rolled back to previous version successfully" }
+          "200": {
+            "description": "Model rolled back to previous version successfully"
+          }
         }
       }
     },
     "/api/admin/ai/statistics": {
       "get": {
         "summary": "Comprehensive AI metrics, confusion pairs, and time-series (Admin only)",
-        "tags": ["Admin AI Management"],
-        "security": [{ "BearerAuth": [] }],
+        "tags": [
+          "Admin AI Management"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
-          { "name": "modelVersion", "in": "query", "schema": { "type": "string" } },
-          { "name": "startDate", "in": "query", "schema": { "type": "string", "format": "date" } },
-          { "name": "endDate", "in": "query", "schema": { "type": "string", "format": "date" } }
+          {
+            "name": "modelVersion",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -534,15 +1325,53 @@
                   "message": "Admin AI statistics retrieved successfully",
                   "data": {
                     "totalClassifications": 130,
-                    "byCategory": { "plastic": 35, "glass": 18, "paper": 16, "metal": 14, "organic": 24, "cardboard": 12, "other": 3 },
-                    "bySource": { "server": 100, "offline": 30, "serverPercentage": 76.9, "offlinePercentage": 23.1 },
+                    "byCategory": {
+                      "plastic": 35,
+                      "glass": 18,
+                      "paper": 16,
+                      "metal": 14,
+                      "organic": 24,
+                      "cardboard": 12,
+                      "other": 3
+                    },
+                    "bySource": {
+                      "server": 100,
+                      "offline": 30,
+                      "serverPercentage": 76.9,
+                      "offlinePercentage": 23.1
+                    },
                     "averageInferenceTimeMs": 19.95,
-                    "feedbackStats": { "totalFeedback": 28, "correctReports": 22, "incorrectReports": 6, "userFeedbackAgreementRate": "78.6%" },
-                    "confusionPairs": [{ "predictedClass": "plastic", "correctClass": "glass", "count": 4 }],
-                    "timeSeries": { "daily": [], "weekly": [], "monthly": [] },
-                    "datasetSummary": { "totalItems": 30, "bySplit": { "train": 22, "val": 6, "test": 2 } },
+                    "feedbackStats": {
+                      "totalFeedback": 28,
+                      "correctReports": 22,
+                      "incorrectReports": 6,
+                      "userFeedbackAgreementRate": "78.6%"
+                    },
+                    "confusionPairs": [
+                      {
+                        "predictedClass": "plastic",
+                        "correctClass": "glass",
+                        "count": 4
+                      }
+                    ],
+                    "timeSeries": {
+                      "daily": [],
+                      "weekly": [],
+                      "monthly": []
+                    },
+                    "datasetSummary": {
+                      "totalItems": 30,
+                      "bySplit": {
+                        "train": 22,
+                        "val": 6,
+                        "test": 2
+                      }
+                    },
                     "moderatedImagesCount": 32,
-                    "activeModelAccuracy": { "modelVersion": "v3", "testAccuracy": null }
+                    "activeModelAccuracy": {
+                      "modelVersion": "v3",
+                      "testAccuracy": null
+                    }
                   }
                 }
               }
@@ -554,18 +1383,41 @@
     "/api/admin/ai/feedback": {
       "get": {
         "summary": "List user feedback with review statuses (Admin only)",
-        "tags": ["Admin AI Management"],
-        "security": [{ "BearerAuth": [] }],
-        "responses": { "200": { "description": "Feedback items list" } }
+        "tags": [
+          "Admin AI Management"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Feedback items list"
+          }
+        }
       }
     },
     "/api/admin/ai/feedback/{id}/review": {
       "patch": {
         "summary": "Review feedback and optionally add to dataset for MobileNetV2 fine-tuning (Admin only)",
-        "tags": ["Admin AI Management"],
-        "security": [{ "BearerAuth": [] }],
+        "tags": [
+          "Admin AI Management"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "requestBody": {
           "required": true,
@@ -573,72 +1425,371 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["decision"],
+                "required": [
+                  "decision"
+                ],
                 "properties": {
-                  "decision": { "type": "string", "enum": ["approved", "rejected", "reviewed"] },
-                  "verifiedClass": { "type": "string", "enum": ["organic", "cardboard", "glass", "metal", "paper", "plastic", "other"], "example": "glass" },
-                  "difficultyTag": { "type": "string", "enum": ["standard", "transparent_pet_vs_glass", "paper_vs_cardboard", "reflective_metal_vs_plastic"], "default": "standard" },
-                  "targetSplit": { "type": "string", "enum": ["train", "val", "test"], "default": "train" },
-                  "reviewNotes": { "type": "string", "example": "Approved for retraining hard negative transparent PET vs glass" }
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "approved",
+                      "rejected",
+                      "reviewed"
+                    ]
+                  },
+                  "verifiedClass": {
+                    "type": "string",
+                    "enum": [
+                      "organic",
+                      "cardboard",
+                      "glass",
+                      "metal",
+                      "paper",
+                      "plastic",
+                      "other"
+                    ],
+                    "example": "glass"
+                  },
+                  "difficultyTag": {
+                    "type": "string",
+                    "enum": [
+                      "standard",
+                      "transparent_pet_vs_glass",
+                      "paper_vs_cardboard",
+                      "reflective_metal_vs_plastic"
+                    ],
+                    "default": "standard"
+                  },
+                  "targetSplit": {
+                    "type": "string",
+                    "enum": [
+                      "train",
+                      "val",
+                      "test"
+                    ],
+                    "default": "train"
+                  },
+                  "reviewNotes": {
+                    "type": "string",
+                    "example": "Approved for retraining hard negative transparent PET vs glass"
+                  }
                 }
               }
             }
           }
         },
-        "responses": { "200": { "description": "Feedback reviewed and integrated into dataset" } }
+        "responses": {
+          "200": {
+            "description": "Feedback reviewed and integrated into dataset"
+          }
+        }
       }
     },
     "/api/admin/ai/datasets": {
       "get": {
         "summary": "List dataset items with partition distributions (Admin only)",
-        "tags": ["Admin Dataset"],
-        "security": [{ "BearerAuth": [] }],
-        "responses": { "200": { "description": "Dataset items" } }
+        "tags": [
+          "Admin Dataset"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dataset items"
+          }
+        }
       },
       "post": {
         "summary": "Upload and register a new dataset item with SHA-256 deduplication (Admin only)",
-        "tags": ["Admin Dataset"],
-        "security": [{ "BearerAuth": [] }],
+        "tags": [
+          "Admin Dataset"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": ["image", "label"],
+                "required": [
+                  "image",
+                  "label"
+                ],
                 "properties": {
-                  "image": { "type": "string", "format": "binary" },
-                  "label": { "type": "string", "enum": ["organic", "cardboard", "glass", "metal", "paper", "plastic", "other"] },
-                  "split": { "type": "string", "enum": ["train", "val", "test"], "default": "train" },
-                  "difficultyTag": { "type": "string", "default": "standard" }
+                  "image": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "label": {
+                    "type": "string",
+                    "enum": [
+                      "organic",
+                      "cardboard",
+                      "glass",
+                      "metal",
+                      "paper",
+                      "plastic",
+                      "other"
+                    ]
+                  },
+                  "split": {
+                    "type": "string",
+                    "enum": [
+                      "train",
+                      "val",
+                      "test"
+                    ],
+                    "default": "train"
+                  },
+                  "difficultyTag": {
+                    "type": "string",
+                    "default": "standard"
+                  }
                 }
               }
             }
           }
         },
         "responses": {
-          "201": { "description": "Dataset item created" },
-          "409": { "description": "Duplicate image detected via SHA-256 content hash" }
+          "201": {
+            "description": "Dataset item created"
+          },
+          "409": {
+            "description": "Duplicate image detected via SHA-256 content hash"
+          }
         }
       }
     },
     "/api/admin/ai/datasets/export": {
       "post": {
         "summary": "Export dataset as partitioned ZIP file for Google Colab fine-tuning (Admin only)",
-        "tags": ["Admin Dataset"],
-        "security": [{ "BearerAuth": [] }],
+        "tags": [
+          "Admin Dataset"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
-          { "name": "split", "in": "query", "schema": { "type": "string", "enum": ["train", "val", "test"] } },
-          { "name": "difficultyTag", "in": "query", "schema": { "type": "string" } }
+          {
+            "name": "split",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "train",
+                "val",
+                "test"
+              ]
+            }
+          },
+          {
+            "name": "difficultyTag",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
             "description": "Binary streaming ZIP file with folder structure dataset/{split}/{class}/{hash}.jpg and classes.txt + metadata.json",
             "content": {
               "application/zip": {
-                "schema": { "type": "string", "format": "binary" }
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/auth/register/verify": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Create account after OTP verification",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "registrationId",
+                  "otp"
+                ],
+                "properties": {
+                  "registrationId": {
+                    "type": "string",
+                    "description": "Opaque ID returned by register, kept in memory by the client"
+                  },
+                  "otp": {
+                    "type": "string",
+                    "pattern": "^[0-9]{6}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Verified account created; returns user, token, refreshToken, expiresIn, refreshExpiresIn and tokenType"
+          },
+          "400": {
+            "description": "Wrong/expired/consumed OTP or registration ID"
+          },
+          "409": {
+            "description": "Email or phone already taken"
+          },
+          "429": {
+            "description": "Rate limit or resend cooldown"
+          },
+          "503": {
+            "description": "Email/store unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/register/resend": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Resend registration OTP",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "registrationId"
+                ],
+                "properties": {
+                  "registrationId": {
+                    "type": "string",
+                    "description": "Opaque ID returned by register, kept in memory by the client"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP resent"
+          },
+          "400": {
+            "description": "Wrong/expired/consumed OTP or registration ID"
+          },
+          "409": {
+            "description": "Email or phone already taken"
+          },
+          "429": {
+            "description": "Rate limit or resend cooldown"
+          },
+          "503": {
+            "description": "Email/store unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/login/verify": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Complete login with OTP",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "loginChallengeId",
+                  "otp"
+                ],
+                "properties": {
+                  "loginChallengeId": {
+                    "type": "string",
+                    "description": "ID returned by successful password validation"
+                  },
+                  "otp": {
+                    "type": "string",
+                    "pattern": "^[0-9]{6}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login complete: user and access/refresh tokens"
+          },
+          "400": {
+            "description": "Invalid, expired or already consumed OTP/challenge"
+          },
+          "429": {
+            "description": "Rate limit or resend cooldown"
+          },
+          "503": {
+            "description": "SMTP or Redis unavailable"
+          }
+        }
+      }
+    },
+    "/api/auth/login/resend": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Resend login OTP",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "loginChallengeId"
+                ],
+                "properties": {
+                  "loginChallengeId": {
+                    "type": "string",
+                    "description": "ID returned by successful password validation"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP sent"
+          },
+          "400": {
+            "description": "Invalid, expired or already consumed OTP/challenge"
+          },
+          "429": {
+            "description": "Rate limit or resend cooldown"
+          },
+          "503": {
+            "description": "SMTP or Redis unavailable"
           }
         }
       }

@@ -12,3 +12,9 @@ yarn-error.log*
 
 __pycache__/
 *.py[cod]
+
+# Development-only email inbox (contains OTP codes)
+local-mailbox/
+
+# Local browser test screenshots
+docs/ui-evidence/

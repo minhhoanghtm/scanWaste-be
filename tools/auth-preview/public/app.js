@@ -1,8 +1,22 @@
 const $ = (selector) => document.querySelector(selector);
 let accessToken = null;
+let refreshToken = null;
+let refreshing = null;
+let authGeneration = 0;
 let toastTimer;
+let signedInProfile = null;
+let resetEmail = '';
+let pendingRegistration = null;
+let pendingLogin = null;
+const resendDeadlines = {};
 
 const messageForCode = {
+  INVALID_OTP: 'Mã không đúng, đã hết hạn hoặc đã được sử dụng. Vui lòng kiểm tra email hoặc gửi lại mã.',
+  OTP_COOLDOWN: 'Vui lòng đợi trước khi yêu cầu mã mới.',
+  EMAIL_NOT_CONFIGURED: 'Chưa gửi được email. Vui lòng thử lại sau.',
+  AUTH_STORE_UNAVAILABLE: 'Dịch vụ đăng nhập tạm gián đoạn. Vui lòng thử lại sau.',
+  SESSION_REVOKED: 'Phiên đăng nhập đã kết thúc. Vui lòng đăng nhập lại.',
+  REFRESH_TOKEN_REUSED: 'Phiên đăng nhập không còn hợp lệ. Vui lòng đăng nhập lại.',
   EMAIL_EXISTS: 'Email này đã được đăng ký. Vui lòng dùng email khác hoặc đăng nhập.',
   PHONE_EXISTS: 'Số điện thoại này đã được đăng ký.',
   INVALID_CREDENTIALS: 'Email/SĐT hoặc mật khẩu không chính xác.',
@@ -27,6 +41,7 @@ function toast(text) {
 
 function showScreen(name) {
   if (['home', 'profile'].includes(name) && !accessToken) name = 'login';
+  if (name === 'verify' && !accessToken && !pendingRegistration && !pendingLogin) name = 'login';
   if (!$(`#${name}-screen`)) return;
   document.querySelectorAll('.screen').forEach((screen) => { screen.hidden = screen.id !== `${name}-screen`; });
   $('#member-nav').hidden = !['home', 'profile'].includes(name);
@@ -34,9 +49,11 @@ function showScreen(name) {
     if (button.dataset.screen === name) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
   });
-  const titles = { login: 'Đăng nhập', register: 'Đăng ký', home: 'Trang chủ', profile: 'Hồ sơ' };
+  const titles = { login: 'Đăng nhập', register: 'Đăng ký', home: 'Trang chủ', profile: 'Hồ sơ', verify: 'Xác minh email', forgot: 'Quên mật khẩu', reset: 'Đặt lại mật khẩu' };
   document.title = `EcoSort AI · ${titles[name]}`;
   window.scrollTo({ top: 0, behavior: 'instant' });
+  document.querySelector(`#${name}-screen h1`)?.setAttribute('tabindex', '-1');
+  document.querySelector(`#${name}-screen h1`)?.focus({ preventScroll: true });
 }
 
 function showMessage(target, message, success = false) {
@@ -84,7 +101,7 @@ function updateStrength() {
   $('#strength-label').textContent = password ? ['Yếu', 'Yếu', 'Trung bình', 'Khá mạnh', 'Mạnh'][score] : 'Chưa nhập';
 }
 
-async function api(path, body) {
+async function api(path, body, retry = true) {
   let response;
   try {
     response = await fetch(`/api${path}`, {
@@ -97,15 +114,31 @@ async function api(path, body) {
     throw new Error('Không thể kết nối máy chủ. Kiểm tra kết nối rồi thử lại.');
   }
   const payload = await response.json();
+  if (response.status === 401 && payload.code === 'TOKEN_EXPIRED' && refreshToken && retry) {
+    if (!refreshing) {
+      const generation = authGeneration;
+      refreshing = api('/auth/refresh', { refreshToken }, false).then(data => {
+        if (generation !== authGeneration) throw new Error('Phiên đã thay đổi. Vui lòng đăng nhập lại.');
+        accessToken = data.token; refreshToken = data.refreshToken;
+      }).catch(error => { if (generation === authGeneration) clearAuthentication(); throw error; })
+        .finally(() => { refreshing = null; });
+    }
+    await refreshing;
+    return api(path, body, false);
+  }
   if (!response.ok) {
     const error = new Error(messageForCode[payload.code] || payload.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
     error.code = payload.code;
+    error.retryAfter = Number(response.headers.get('retry-after')) || 60;
     throw error;
   }
   return payload.data;
 }
 
 function fillProfile(user) {
+  signedInProfile = user;
+  $('#profile-email-status').textContent = user.emailVerified ? 'Đã xác minh' : 'Chưa xác minh';
+  $('#profile-verify').hidden = Boolean(user.emailVerified);
   $('#profile-name').textContent = user.name;
   $('#profile-email').textContent = user.email;
   $('#profile-phone').textContent = user.phone || 'Chưa cập nhật';
@@ -119,7 +152,9 @@ function fillProfile(user) {
 }
 
 async function completeAuthentication(data, registered, destination = 'home') {
+  authGeneration++;
   accessToken = data.token;
+  refreshToken = data.refreshToken;
   // Verify the issued JWT through the protected profile endpoint as well.
   const profile = await api('/users/me');
   fillProfile(profile);
@@ -127,7 +162,8 @@ async function completeAuthentication(data, registered, destination = 'home') {
     ? 'Bạn đã tạo tài khoản thành công. Hành trình xanh bắt đầu!'
     : 'Bạn đã đăng nhập thành công.';
   showMessage('#home-message', '');
-  showScreen(destination);
+  if (!profile.emailVerified) openVerification(registered ? data.emailVerification?.delivery : undefined);
+  else showScreen(destination);
 }
 
 function loading(button, state, idleText) {
@@ -151,7 +187,9 @@ $('#login-form').addEventListener('submit', async (event) => {
       if ($('#remember').checked) localStorage.setItem('ecosort-remembered-identifier', identifier);
       else localStorage.removeItem('ecosort-remembered-identifier');
     } catch { /* Storage may be unavailable in private browsing. */ }
-    await completeAuthentication(data, false);
+    clearAuthentication();
+    pendingLogin = data;
+    openVerification('sent');
     $('#login-password').value = '';
   } catch (error) {
     accessToken = null;
@@ -175,11 +213,13 @@ $('#register-form').addEventListener('submit', async (event) => {
       password: $('#register-password').value,
       confirmPassword: $('#register-confirm').value,
     });
-    await completeAuthentication(data, true);
+    clearAuthentication();
+    pendingRegistration = data;
+    openVerification('sent');
     $('#register-form').reset();
     updateStrength();
   } catch (error) {
-    accessToken = null;
+    clearAuthentication();
     showMessage('#register-message', error.message);
     if (error.code === 'EMAIL_EXISTS') setFieldError('register-email', 'Email đã được đăng ký.');
     if (error.code === 'PHONE_EXISTS') setFieldError('register-phone', 'Số điện thoại đã được đăng ký.');
@@ -204,19 +244,41 @@ document.querySelectorAll('#register-form input[required]').forEach((input) => {
 });
 $('#register-password').addEventListener('input', updateStrength);
 $('#terms').addEventListener('change', () => { $('#register-submit').disabled = !$('#terms').checked; });
-$('#logout').addEventListener('click', () => {
-  accessToken = null;
+function clearAuthentication() {
+  authGeneration++;
+  accessToken = null; refreshToken = null; signedInProfile = null; pendingRegistration = null; pendingLogin = null;
   $('#login-password').value = '';
-  showMessage('#login-message', 'Bạn đã đăng xuất trên trình duyệt này.', true);
-  showScreen('login');
+  $('#verify-otp').value = '';
+}
+async function logout(all = false) {
+  const button = all ? $('#logout-all') : $('#logout');
+  button.disabled = true;
+  try {
+    if (refreshing) await refreshing;
+    await api(all ? '/auth/logout-all' : '/auth/logout', {});
+    clearAuthentication();
+    showMessage('#login-message', all ? 'Bạn đã đăng xuất trên tất cả thiết bị.' : 'Bạn đã đăng xuất.', true);
+    showScreen('login');
+  } catch (error) {
+    if (['SESSION_REVOKED', 'UNAUTHORIZED', 'INVALID_REFRESH_TOKEN', 'REFRESH_TOKEN_REUSED'].includes(error.code)) {
+      clearAuthentication(); showScreen('login'); showMessage('#login-message', error.message);
+    } else showMessage($('#verify-screen').hidden ? '#profile-message' : '#verify-message', error.message);
+  } finally { button.disabled = false; }
+}
+$('#logout').addEventListener('click', () => logout());
+$('#logout-all').addEventListener('click', () => logout(true));
+$('#verify-back').addEventListener('click', () => {
+  if (pendingRegistration) { clearAuthentication(); showScreen('register'); }
+  else if (pendingLogin) { clearAuthentication(); showScreen('login'); }
+  else logout();
 });
 $('#refresh-profile').addEventListener('click', async () => {
   const button = $('#refresh-profile');
   button.disabled = true;
   try { fillProfile(await api('/users/me')); toast('Đã cập nhật hồ sơ từ máy chủ.'); }
   catch (error) {
-    if (['TOKEN_EXPIRED', 'UNAUTHORIZED'].includes(error.code)) {
-      accessToken = null; showScreen('login'); showMessage('#login-message', error.message);
+    if (['TOKEN_EXPIRED', 'UNAUTHORIZED', 'SESSION_REVOKED', 'REFRESH_TOKEN_REUSED', 'INVALID_REFRESH_TOKEN'].includes(error.code)) {
+      clearAuthentication(); showScreen('login'); showMessage('#login-message', error.message);
     } else showMessage('#profile-message', error.message);
   } finally { button.disabled = false; }
 });
@@ -330,3 +392,119 @@ async function initializeSocial() {
   } catch (error) { socialMessage(error.message); }
 }
 initializeSocial();
+
+function startCooldown(buttonId, seconds = 60) {
+  resendDeadlines[buttonId] = Date.now() + seconds * 1000;
+  updateCooldowns();
+}
+function updateCooldowns() {
+  for (const [id, deadline] of Object.entries(resendDeadlines)) {
+    const button = $('#' + id);
+    const seconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    button.disabled = seconds > 0;
+    button.textContent = seconds > 0 ? `Gửi lại mã sau ${seconds}s` : 'Gửi lại mã';
+    if (!seconds) delete resendDeadlines[id];
+  }
+}
+setInterval(updateCooldowns, 1000);
+function openVerification(delivery) {
+  if (!signedInProfile && !pendingRegistration && !pendingLogin) return;
+  $('#verify-heading').textContent = pendingRegistration ? 'Xác nhận đăng ký' : pendingLogin ? 'Xác nhận đăng nhập' : 'Xác minh email';
+  $('#verify-back').setAttribute('aria-label', pendingRegistration ? 'Về đăng ký' : 'Về đăng nhập');
+  $('#verify-email').textContent = pendingRegistration?.email || pendingLogin?.email || signedInProfile.email;
+  $('#verify-otp').value = '';
+  showMessage('#verify-message', delivery === 'sent' ? (pendingRegistration ? 'Đã gửi mã đến email của bạn. Nhập đúng mã để hoàn tất đăng ký; tài khoản chưa được tạo.' : pendingLogin ? 'Đã gửi mã đến email của tài khoản. Nhập đúng mã để hoàn tất đăng nhập.' : 'Mã xác minh đã được gửi. Vui lòng kiểm tra email.')
+    : delivery === 'failed' || delivery === 'not_configured' ? 'Chưa gửi được mã. Bạn có thể yêu cầu gửi lại.'
+    : 'Nhấn Gửi mã xác minh nếu bạn chưa nhận được mã.', delivery === 'sent');
+  if (delivery === 'sent') startCooldown('verify-resend', pendingRegistration?.resendAfter || pendingLogin?.resendAfter || 60);
+  showScreen('verify');
+}
+$('#profile-verify').addEventListener('click', () => openVerification());
+$('#verify-resend').addEventListener('click', async () => {
+  const button = $('#verify-resend'); button.disabled = true;
+  try {
+    const result = pendingRegistration
+      ? await api('/auth/register/resend', { registrationId: pendingRegistration.registrationId })
+      : pendingLogin ? await api('/auth/login/resend', { loginChallengeId: pendingLogin.loginChallengeId })
+      : await api('/auth/email/send-otp', {});
+    if (result.alreadyVerified) { fillProfile(await api('/users/me')); showScreen('home'); return; }
+    startCooldown('verify-resend');
+    showMessage('#verify-message', 'Đã gửi mã mới. Vui lòng kiểm tra email.', true);
+  } catch (error) {
+    if (error.code === 'OTP_COOLDOWN' || error.code === 'TOO_MANY_REQUESTS') startCooldown('verify-resend', error.retryAfter);
+    showMessage('#verify-message', error.message);
+  } finally { if (!resendDeadlines['verify-resend']) button.disabled = false; }
+});
+$('#verify-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const otp = $('#verify-otp').value.trim();
+  if (!/^\d{6}$/.test(otp)) return showMessage('#verify-message', 'Vui lòng nhập mã gồm 6 số.');
+  loading($('#verify-submit'), true, 'Xác minh & tiếp tục');
+  try {
+    if (pendingRegistration) {
+      const data = await api('/auth/register/verify', { registrationId: pendingRegistration.registrationId, otp });
+      pendingRegistration = null;
+      await completeAuthentication(data, true);
+      toast('Đăng ký thành công!');
+    } else if (pendingLogin) {
+      const data = await api('/auth/login/verify', { loginChallengeId: pendingLogin.loginChallengeId, otp });
+      pendingLogin = null;
+      await completeAuthentication(data, false);
+      toast('Đăng nhập thành công!');
+    } else {
+      await api('/auth/email/verify', { otp });
+      fillProfile(await api('/users/me'));
+      showScreen('home'); toast('Email đã được xác minh.');
+    }
+    $('#verify-otp').value = '';
+  } catch (error) { showMessage('#verify-message', error.message); }
+  finally { loading($('#verify-submit'), false, 'Xác minh & tiếp tục'); }
+});
+$('#open-forgot').addEventListener('click', () => {
+  const identifier = $('#login-identifier').value.trim();
+  $('#forgot-email').value = identifier.includes('@') ? identifier : '';
+  showMessage('#forgot-message', ''); showScreen('forgot');
+});
+$('#forgot-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const email = $('#forgot-email').value.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showMessage('#forgot-message', 'Vui lòng nhập email hợp lệ.');
+  loading($('#forgot-submit'), true, 'Gửi mã xác nhận');
+  try {
+    await api('/auth/password/forgot', { email });
+    resetEmail = email; $('#reset-email').textContent = email;
+    $('#reset-form').reset(); showMessage('#reset-message', '');
+    startCooldown('reset-resend'); showScreen('reset');
+  } catch (error) { showMessage('#forgot-message', error.message); }
+  finally { loading($('#forgot-submit'), false, 'Gửi mã xác nhận'); }
+});
+$('#reset-resend').addEventListener('click', async () => {
+  const button = $('#reset-resend'); button.disabled = true;
+  try {
+    await api('/auth/password/forgot', { email: resetEmail });
+    startCooldown('reset-resend');
+    showMessage('#reset-message', 'Nếu tài khoản hợp lệ, mã mới sẽ được gửi đến email của bạn.', true);
+  } catch (error) {
+    if (error.code === 'OTP_COOLDOWN' || error.code === 'TOO_MANY_REQUESTS') startCooldown('reset-resend', error.retryAfter);
+    showMessage('#reset-message', error.message);
+  } finally { if (!resendDeadlines['reset-resend']) button.disabled = false; }
+});
+$('#reset-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const otp = $('#reset-otp').value.trim();
+  const password = $('#reset-password').value;
+  const confirmPassword = $('#reset-confirm').value;
+  if (!/^\d{6}$/.test(otp)) return showMessage('#reset-message', 'Vui lòng nhập mã gồm 6 số.');
+  if (password.length < 8 || !password.trim() || new TextEncoder().encode(password).length > 72)
+    return showMessage('#reset-message', 'Mật khẩu cần ít nhất 8 ký tự và không quá 72 byte.');
+  if (password !== confirmPassword) return showMessage('#reset-message', 'Mật khẩu xác nhận chưa khớp.');
+  loading($('#reset-submit'), true, 'Lưu mật khẩu mới');
+  try {
+    await api('/auth/password/reset', { email: resetEmail, otp, password, confirmPassword });
+    clearAuthentication(); $('#reset-form').reset();
+    $('#login-identifier').value = resetEmail;
+    showScreen('login');
+    showMessage('#login-message', 'Đã đổi mật khẩu và đăng xuất các phiên cũ. Hãy đăng nhập bằng mật khẩu mới.', true);
+  } catch (error) { showMessage('#reset-message', error.message); }
+  finally { loading($('#reset-submit'), false, 'Lưu mật khẩu mới'); }
+});

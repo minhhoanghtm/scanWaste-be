@@ -240,25 +240,23 @@ docker compose down
     "confirmPassword": "Password123"
   }
   ```
-- **Response (201 Created):**
+- **Response (202 Accepted):** gửi OTP, chưa tạo tài khoản hoặc cấp token.
   ```json
   {
     "success": true,
-    "message": "User registered successfully",
     "data": {
-      "user": {
-        "id": "660c1d2e...",
-        "name": "Nguyen Van A",
-        "email": "user@example.com",
-        "phone": "+84912345678",
-        "role": "user",
-        "createdAt": "2026-09-16T...",
-        "updatedAt": "2026-09-16T..."
-      },
-      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      "registrationId": "<opaque-id>",
+      "email": "user@example.com",
+      "status": "pending_verification",
+      "expiresIn": 300,
+      "resendAfter": 60
     }
   }
   ```
+- **`POST /api/auth/register/verify`** với `{ "registrationId": "<opaque-id>", "otp": "123456" }`: OTP đúng mới lưu user có `emailVerified=true` và trả **201** kèm user, token và refreshToken.
+- **`POST /api/auth/register/resend`** với `{ "registrationId": "<opaque-id>" }`: gửi lại mã sau 60 giây. Mã sai 5 lần hoặc hết hạn 5 phút phải đăng ký lại.
+- Thông tin chờ đăng ký chỉ nằm trong Redis với TTL; mật khẩu được băm bcrypt. SMTP lỗi/chưa cấu hình không tạo tài khoản. Google đăng nhập giữ luồng xác minh ID token riêng.
+- Gmail thật cần App Password; chạy `npm run mail:setup` trên máy để nhập ẩn và kiểm tra. Xem `docs/REDIS_AUTH.md`.
 
 #### Đăng nhập
 - **`POST /api/auth/login`**
@@ -269,7 +267,10 @@ docker compose down
     "password": "Password123"
   }
   ```
-- **Response (200 OK):** Trả về thông tin User và JWT Token.
+- **Response (202 Accepted):** mật khẩu đúng thì gửi OTP đến email của tài khoản; trả `loginChallengeId`, chưa cấp token.
+- **`POST /api/auth/login/verify`** với `loginChallengeId`, `otp`: mã đúng mới trả 200 và cấp access/refresh token.
+- **`POST /api/auth/login/resend`** với `loginChallengeId`: gửi lại sau 60 giây; mã hết hạn 5 phút, sai 5 lần phải đăng nhập lại.
+- Google vẫn xác thực ID token trực tiếp, không yêu cầu OTP email bổ sung.
 
 `identifier` nhận email hoặc SĐT Việt Nam (ví dụ `0912345678`, `+84912345678`, `84912345678`). API vẫn nhận trường `email` của client cũ hoặc trường `phone`; mỗi request chỉ được gửi một trong ba trường. Email được chuyển thành chữ thường, SĐT được lưu dạng `+84`.
 
@@ -640,3 +641,7 @@ Các tính năng chính:
     }
   }
   ```
+
+## Redis authentication update (local feature branch)
+
+Redis is now required for session validation, refresh tokens, OTP and rate limiting. See [REDIS_AUTH.md](docs/REDIS_AUTH.md) for setup, API contracts and migration notes. Run `npm run test:session` against dedicated test Redis/MongoDB.
