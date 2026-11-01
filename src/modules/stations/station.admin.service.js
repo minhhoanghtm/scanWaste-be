@@ -20,7 +20,7 @@ async function updateWithLog({ id, actorId, action, allowedFrom, buildUpdate, in
   const after = await Station.findOneAndUpdate(
     { _id: id, status: before.status, capacityPercent: before.capacityPercent },
     { $set: update },
-    { new: true, runValidators: true }
+    { returnDocument: 'after', runValidators: true }
   );
   // Có người khác đổi trạm giữa lúc đọc và ghi → báo xung đột, client tải lại
   if (!after) throw fail(409, 'STATION_CHANGED', 'Station was changed by another request. Please reload.');
