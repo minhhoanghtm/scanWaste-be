@@ -6,17 +6,20 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "test:unit": "node tests/unit/ai.test.js && node tests/unit/auth.test.js && node --test tests/unit/auth-mail.test.js",
+    "test:unit": "node tests/unit/ai.test.js && node tests/unit/auth.test.js && node --test tests/unit/auth-mail.test.js && node --test tests/unit/stations.test.js",
     "test:integration": "node tests/integration/api.test.js",
     "test:auth": "node --test tests/integration/auth.test.js",
     "test:social": "node --test tests/integration/social.test.js",
-    "test": "npm run test:unit && npm run test:auth && npm run test:social && npm run test:integration && npm run test:session && npm run test:registration && npm run test:login-otp",
+    "test": "npm run test:unit && npm run test:auth && npm run test:social && npm run test:integration && npm run test:session && npm run test:registration && npm run test:login-otp && npm run test:stations",
     "preview": "node tools/auth-preview/server.js",
     "test:session": "node --test tests/integration/session-otp.test.js",
     "mail:local": "node scripts/local-mailbox.js",
     "mail:setup": "node scripts/setup-gmail.js",
     "test:registration": "node --test tests/integration/registration.test.js",
-    "test:login-otp": "node --test tests/integration/login-otp.test.js"
+    "test:login-otp": "node --test tests/integration/login-otp.test.js",
+    "test:stations": "node --test tests/integration/stations.test.js",
+    "seed:stations": "node scripts/seed-stations.js",
+    "make-admin": "node scripts/make-admin.js"
   },
   "keywords": [],
   "author": "",
