@@ -8,7 +8,9 @@ const classificationRoutes = require('../modules/classifications/classification.
 const historyRoutes = require('../modules/history/history.routes');
 const statisticsRoutes = require('../modules/statistics/statistics.routes');
 const aiRoutes = require('../modules/ai/ai.routes');
+const stationRoutes = require('../modules/stations/station.routes');
 const adminAiRoutes = require('./admin.ai.routes');
+const adminStationRoutes = require('./admin.station.routes');
 const docsRoutes = require('../docs/docs.routes');
 
 const router = express.Router();
@@ -34,8 +36,10 @@ router.use('/classifications', classificationRoutes);
 router.use('/history', historyRoutes);
 router.use('/statistics', statisticsRoutes);
 router.use('/ai', aiRoutes);
+router.use('/stations', stationRoutes);
 
 // Admin Routes Registration
 router.use('/admin/ai', adminAiRoutes);
+router.use('/admin/stations', adminStationRoutes);
 
 module.exports = router;
