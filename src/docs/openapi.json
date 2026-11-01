@@ -1793,6 +1793,325 @@
           }
         }
       }
+    },
+    "/api/stations/nearby": {
+      "get": {
+        "tags": [
+          "Stations"
+        ],
+        "summary": "UC005 – Trạm thu gom gần vị trí (công khai)",
+        "security": [],
+        "description": "Sắp gần → xa. Không có trạm trong bán kính thì tự nới 10 → 20 km (radiusExpanded=true). categoryCounts đếm trong bán kính ban đầu, đã áp dụng q, chưa áp dụng category. Dữ liệu trạm là MÔ PHỎNG.",
+        "parameters": [
+          {
+            "name": "lat",
+            "in": "query",
+            "required": true,
+            "description": "Vĩ độ",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "in": "query",
+            "required": true,
+            "description": "Kinh độ",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "radiusKm",
+            "in": "query",
+            "required": false,
+            "description": "Bán kính ban đầu (km), mặc định 5, tối đa 50",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "description": "Lọc loại rác",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "organic",
+                "cardboard",
+                "glass",
+                "metal",
+                "paper",
+                "plastic",
+                "other"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "description": "Tìm theo tên/địa chỉ, không phân biệt dấu",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Mặc định 1",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Mặc định 5, tối đa 100",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ items, pagination, radiusKm, radiusExpanded, categoryCounts }"
+          },
+          "400": {
+            "description": "Validation error"
+          }
+        }
+      }
+    },
+    "/api/stations/{id}": {
+      "get": {
+        "tags": [
+          "Stations"
+        ],
+        "summary": "UC005/UC006 – Chi tiết trạm (công khai)",
+        "security": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Station ObjectId"
+          },
+          {
+            "name": "lat",
+            "in": "query",
+            "required": false,
+            "description": "Tính distanceKm nếu có",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "in": "query",
+            "required": false,
+            "description": "Tính distanceKm nếu có",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Station (distanceKm = null nếu không truyền toạ độ)"
+          },
+          "404": {
+            "description": "STATION_NOT_FOUND"
+          },
+          "400": {
+            "description": "Validation error"
+          }
+        }
+      }
+    },
+    "/api/admin/stations": {
+      "get": {
+        "tags": [
+          "Admin Stations"
+        ],
+        "summary": "UC012 – Danh sách trạm (% giảm dần) + tổng hợp",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Lọc trạng thái",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "FULL",
+                "OFFLINE",
+                "SERVICING"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ items, summary: { total, warning, full, offline, servicing } }"
+          },
+          "401": {
+            "description": "Chưa đăng nhập"
+          },
+          "403": {
+            "description": "Không phải admin"
+          },
+          "400": {
+            "description": "Validation error"
+          }
+        }
+      }
+    },
+    "/api/admin/stations/{id}/status": {
+      "patch": {
+        "tags": [
+          "Admin Stations"
+        ],
+        "summary": "UC012 luồng 4a – Điều xe (DISPATCH) / Đã thu gom (COMPLETE)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "description": "DISPATCH: ACTIVE|FULL → SERVICING. COMPLETE: SERVICING → ACTIVE, sức chứa 0%. Mỗi thao tác ghi StationLog (người làm, thời điểm, trước/sau).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Station ObjectId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "action"
+                ],
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "DISPATCH",
+                      "COMPLETE"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Station sau khi cập nhật"
+          },
+          "401": {
+            "description": "Chưa đăng nhập"
+          },
+          "403": {
+            "description": "Không phải admin"
+          },
+          "404": {
+            "description": "STATION_NOT_FOUND"
+          },
+          "409": {
+            "description": "INVALID_STATION_STATE / STATION_CHANGED"
+          },
+          "400": {
+            "description": "Validation error"
+          }
+        }
+      }
+    },
+    "/api/admin/stations/{id}/capacity": {
+      "patch": {
+        "tags": [
+          "Admin Stations"
+        ],
+        "summary": "Giả lập telemetry sức chứa RVM (MÔ PHỎNG)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "description": "Cộng delta vào % sức chứa (kẹp 0–100). ACTIVE/FULL tự chuyển theo %, OFFLINE/SERVICING giữ nguyên. Ghi StationLog.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Station ObjectId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "delta"
+                ],
+                "properties": {
+                  "delta": {
+                    "type": "integer",
+                    "minimum": -100,
+                    "maximum": 100,
+                    "not": {
+                      "enum": [
+                        0
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Station sau khi cập nhật"
+          },
+          "401": {
+            "description": "Chưa đăng nhập"
+          },
+          "403": {
+            "description": "Không phải admin"
+          },
+          "404": {
+            "description": "STATION_NOT_FOUND"
+          },
+          "400": {
+            "description": "Validation error"
+          }
+        }
+      }
     }
   }
 }
