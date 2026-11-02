@@ -7,6 +7,7 @@ const userRoutes = require('../modules/users/user.routes');
 const classificationRoutes = require('../modules/classifications/classification.routes');
 const historyRoutes = require('../modules/history/history.routes');
 const statisticsRoutes = require('../modules/statistics/statistics.routes');
+const esgReportRoutes = require('../modules/statistics/esg-report.routes');
 const aiRoutes = require('../modules/ai/ai.routes');
 const stationRoutes = require('../modules/stations/station.routes');
 const adminAiRoutes = require('./admin.ai.routes');
@@ -41,5 +42,6 @@ router.use('/stations', stationRoutes);
 // Admin Routes Registration
 router.use('/admin/ai', adminAiRoutes);
 router.use('/admin/stations', adminStationRoutes);
+router.use('/admin/reports', esgReportRoutes);
 
 module.exports = router;
