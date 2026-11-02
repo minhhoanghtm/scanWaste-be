@@ -29,6 +29,14 @@ export default function RedeemScreen() {
         points >= selectedReward.points &&
         selectedReward.stock > 0;
 
+    const unavailableReason = selectedReward
+        ? selectedReward.stock <= 0
+            ? "Phần quà này đã hết hàng. Vui lòng chọn quà khác."
+            : points < selectedReward.points
+                ? `Bạn còn thiếu ${formatPoints(selectedReward.points - points)} EcoPoints để đổi quà.`
+                : ""
+        : "";
+
     const handleRedeem = () => {
         if (busy || !selectedReward) return;
 
@@ -194,6 +202,15 @@ export default function RedeemScreen() {
                                             : "Chưa đủ điều kiện đổi"}
                             </Text>
                         </Pressable>
+
+                        {!success && unavailableReason !== "" && (
+                            <View style={[styles.messageBox, styles.messageError]}>
+                                <Text style={styles.messageIcon}>!</Text>
+                                <Text style={styles.messageText}>
+                                    {unavailableReason}
+                                </Text>
+                            </View>
+                        )}
 
                         {message !== "" && (
                             <View
