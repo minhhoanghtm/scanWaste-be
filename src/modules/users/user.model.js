@@ -25,7 +25,9 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: function () { return !this.googleId; },
+      required: function () {
+        return !this.googleId;
+      },
       minlength: [8, 'Password must be at least 8 characters'],
       select: false,
     },
@@ -34,9 +36,68 @@ const userSchema = new mongoose.Schema(
       enum: ['user', 'admin'],
       default: 'user',
     },
-    googleId: { type: String, select: false },
-    emailVerified: { type: Boolean, default: false },
-    authVersion: { type: Number, default: 0, select: true },
+
+    // UC009: User Profile and Gamification
+    totalPoints: {
+      type: Number,
+      default: 0,
+      min: [0, 'Total points cannot be negative'],
+    },
+    currentStreak: {
+      type: Number,
+      default: 0,
+      min: [0, 'Current streak cannot be negative'],
+    },
+    totalClassifications: {
+      type: Number,
+      default: 0,
+      min: [0, 'Total classifications cannot be negative'],
+    },
+    lastActivityDate: {
+      type: Date,
+      default: null,
+    },
+    tier: {
+      type: String,
+      enum: ['Bronze', 'Silver', 'Gold', 'Platinum'],
+      default: 'Bronze',
+    },
+    badges: {
+      type: [
+        {
+          name: {
+            type: String,
+            required: true,
+            trim: true,
+          },
+          description: {
+            type: String,
+            default: '',
+            trim: true,
+          },
+          earnedAt: {
+            type: Date,
+            default: Date.now,
+          },
+        },
+      ],
+      default: [],
+    },
+
+    // Existing authentication fields
+    googleId: {
+      type: String,
+      select: false,
+    },
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    authVersion: {
+      type: Number,
+      default: 0,
+      select: true,
+    },
   },
   {
     timestamps: true,
@@ -65,15 +126,23 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Existing accounts may have no phone. Enforce uniqueness only for stored strings.
-userSchema.index({ phone: 1 }, {
-  unique: true,
-  partialFilterExpression: { phone: { $type: 'string' } },
-});
-userSchema.index({ googleId: 1 }, {
-  unique: true,
-  partialFilterExpression: { googleId: { $type: 'string' } },
-});
+// Existing accounts may have no phone.
+// Enforce uniqueness only for stored strings.
+userSchema.index(
+  { phone: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { phone: { $type: 'string' } },
+  }
+);
+
+userSchema.index(
+  { googleId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { googleId: { $type: 'string' } },
+  }
+);
 
 const User = mongoose.model('User', userSchema);
 
