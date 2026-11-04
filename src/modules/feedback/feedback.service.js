@@ -17,8 +17,10 @@ class FeedbackService {
       correctClass,
       isCorrect = false,
       comment = '',
-      userConsentForTraining = false,
+      userConsentForTraining,
+      consentGiven,
     } = data;
+    const effectiveConsent = Boolean(userConsentForTraining ?? consentGiven ?? false);
 
     if (!classificationId) {
       const error = new Error('classificationId is required');
@@ -67,7 +69,7 @@ class FeedbackService {
       isCorrect: !!isCorrect,
       comment: typeof comment === 'string' ? comment.trim() : '',
       modelVersion: classification.modelVersion || 'v3',
-      userConsentForTraining: !!userConsentForTraining,
+      userConsentForTraining: effectiveConsent,
       imageUrl: classification.imageUrl || null,
       status: 'pending',
       auditLog: [
@@ -78,7 +80,7 @@ class FeedbackService {
           details: {
             predictedClass: classification.predictedClass,
             correctClass: correctClass.toLowerCase(),
-            consentGiven: !!userConsentForTraining,
+            consentGiven: effectiveConsent,
           },
         },
       ],
