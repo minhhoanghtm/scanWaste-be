@@ -1,4 +1,5 @@
 const Classification = require('../classifications/classification.model');
+const userService = require('../users/user.service');
 const { SUPPORTED_WASTE_CLASSES, WASTE_CLASSES_VI, WASTE_DISPOSAL_TIPS } = require('./ai.config');
 
 class AISyncService {
@@ -69,9 +70,15 @@ class AISyncService {
       };
     }
 
+    const requiresReview = finalConfidence < 0.7;
+    const pointsEarned = requiresReview ? 0 : 10;
+
     // 4. Concurrency-safe Insertion
     try {
       const newClassification = await Classification.create({
+        pointsEarned,
+        pointsAwarded: !requiresReview,
+        reviewStatus: requiresReview ? 'pending' : 'not_required',
         userId,
         imageUrl: imageUrl || null,
         predictedClass: normalizedClass,
@@ -90,6 +97,13 @@ class AISyncService {
           verifiedByServer: false, // Explicitly marks that server did not infer this
         },
       });
+
+      try {
+        const totalClassifications = await Classification.countDocuments({ userId });
+        await userService.recordClassificationActivity(userId, totalClassifications, pointsEarned);
+      } catch (userErr) {
+        console.warn('Could not record user activity during offline sync:', userErr.message);
+      }
 
       return {
         id: newClassification._id,
