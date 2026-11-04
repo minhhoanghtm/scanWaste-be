@@ -37,6 +37,8 @@ const userSchema = new mongoose.Schema(
       default: 'user',
     },
 
+    avatarUrl: { type: String, default: '' },
+
     // UC009: User Profile and Gamification
     totalPoints: {
       type: Number,

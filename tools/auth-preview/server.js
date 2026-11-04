@@ -12,7 +12,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/api', express.raw({ type: () => true, limit: '1mb' }), async (req, res) => {
+app.use(['/api', '/uploads/avatars'], express.raw({ type: () => true, limit: '6mb' }), async (req, res) => {
   try {
     const headers = {};
     for (const name of ['content-type', 'authorization', 'cookie']) {
