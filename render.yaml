@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: scanwaste-be
+    env: docker
+    dockerfilePath: Dockerfile.paas
+    plan: free
+    region: singapore
+    autoDeploy: true
+    branch: main
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: OTP_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: REDIS_URL
+        sync: false
+      - key: AI_SERVICE_URL
+        value: http://127.0.0.1:5005
+      - key: AI_PROVIDER
+        value: fastapi_tflite
+      - key: INFERENCE_TIMEOUT_MS
+        value: "5000"
+      - key: MAX_FILE_SIZE
+        value: "5242880"
+      - key: UPLOAD_DIR
+        value: uploads
