@@ -1,0 +1,58 @@
+[
+  {
+    "key": "organic",
+    "name": "Rác hữu cơ",
+    "tips": [
+      "Phân loại vào thùng rác hữu cơ hoặc ủ làm phân compost",
+      "Để ráo nước trước khi bỏ vào thùng để giảm mùi hôi"
+    ]
+  },
+  {
+    "key": "cardboard",
+    "name": "Bìa carton",
+    "tips": [
+      "Gấp dẹt thùng bìa carton để tiết kiệm diện tích chứa",
+      "Giữ khô ráo và không để dính dầu mỡ thực phẩm"
+    ]
+  },
+  {
+    "key": "glass",
+    "name": "Thủy tinh",
+    "tips": [
+      "Rửa sạch chai lọ thủy tinh trước khi bỏ vào thùng tái chế",
+      "Nếu bị vỡ, bọc kỹ bằng giấy báo để tránh gây thương tích"
+    ]
+  },
+  {
+    "key": "metal",
+    "name": "Kim loại",
+    "tips": [
+      "Rửa sạch cặn bẩn trong lon nước ngọt, hộp thiếc kim loại",
+      "Bẹp lon kim loại để thu gọn thể tích trước khi tái chế"
+    ]
+  },
+  {
+    "key": "paper",
+    "name": "Giấy",
+    "tips": [
+      "Để riêng giấy sạch vào thùng rác tái chế giấy",
+      "Tránh để giấy bị ướt hoặc dính dầu mỡ"
+    ]
+  },
+  {
+    "key": "plastic",
+    "name": "Nhựa",
+    "tips": [
+      "Rửa sạch chai nhựa, cốc nhựa và tháo rời nắp chai",
+      "Bóp dẹp vỏ chai để tối ưu không gian thùng chứa"
+    ]
+  },
+  {
+    "key": "other",
+    "name": "Rác khác",
+    "tips": [
+      "Bỏ vào thùng rác vô cơ hoặc rác thải sinh hoạt thông thường",
+      "Nếu là rác nguy hại (pin, bóng đèn), đưa đến điểm thu gom chuyên biệt"
+    ]
+  }
+]

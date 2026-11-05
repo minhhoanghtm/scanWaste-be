@@ -9,6 +9,7 @@ let resetEmail = '';
 let pendingRegistration = null;
 let pendingLogin = null;
 const resendDeadlines = {};
+const memberScreens = ['home', 'profile', 'lookup', 'scan', 'history', 'detail', 'activity', 'wallet', 'statistics', 'stations', 'rewards'];
 
 const messageForCode = {
   INVALID_OTP: 'Mã không đúng, đã hết hạn hoặc đã được sử dụng. Vui lòng kiểm tra email hoặc gửi lại mã.',
@@ -40,21 +41,22 @@ function toast(text) {
 }
 
 function showScreen(name) {
-  if (['home', 'profile'].includes(name) && !accessToken) name = 'login';
+  if (memberScreens.includes(name) && !accessToken) name = 'login';
   if (name === 'verify' && !accessToken && !pendingRegistration && !pendingLogin) name = 'login';
   if (!$(`#${name}-screen`)) return;
   document.querySelectorAll('.screen').forEach((screen) => { screen.hidden = screen.id !== `${name}-screen`; });
-  $('#member-nav').hidden = !['home', 'profile'].includes(name);
+  $('#member-nav').hidden = !memberScreens.includes(name);
   document.querySelectorAll('#member-nav [data-screen]').forEach((button) => {
-    if (button.dataset.screen === name) button.setAttribute('aria-current', 'page');
+    if (button.dataset.screen === ({ history: 'home', detail: 'home', activity: 'home', statistics: 'home', stations: 'lookup', wallet: 'profile' }[name] || name)) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
   });
-  const titles = { login: 'Đăng nhập', register: 'Đăng ký', home: 'Trang chủ', profile: 'Hồ sơ', verify: 'Xác minh email', forgot: 'Quên mật khẩu', reset: 'Đặt lại mật khẩu' };
+  const titles = { login: 'Đăng nhập', register: 'Đăng ký', home: 'Trang chủ', profile: 'Hồ sơ', verify: 'Xác minh email', forgot: 'Quên mật khẩu', reset: 'Đặt lại mật khẩu', lookup: 'Tra cứu rác', scan: 'Quét AI', history: 'Lịch sử quét', detail: 'Chi tiết', activity: 'Lịch sử điểm', wallet: 'Ví voucher', statistics: 'Thống kê', stations: 'Điểm thu gom', rewards: 'Quà tặng' };
   document.title = `EcoSort AI · ${titles[name]}`;
   if (name === 'profile') loadMemberProfile();
   window.scrollTo({ top: 0, behavior: 'instant' });
   document.querySelector(`#${name}-screen h1`)?.setAttribute('tabindex', '-1');
   document.querySelector(`#${name}-screen h1`)?.focus({ preventScroll: true });
+  window.dispatchEvent(new CustomEvent('ecosort-screen', { detail: name }));
 }
 
 function showMessage(target, message, success = false) {
@@ -138,6 +140,7 @@ async function api(path, body, retry = true, method = body === undefined ? 'GET'
 
 function fillProfile(user) {
   signedInProfile = user;
+  window.dispatchEvent(new CustomEvent('ecosort-profile', { detail: user }));
   $('#profile-email-status').textContent = user.emailVerified ? 'Đã xác minh' : 'Chưa xác minh';
   $('#profile-verify').hidden = Boolean(user.emailVerified);
   $('#profile-name').textContent = user.name;
@@ -256,6 +259,7 @@ function clearAuthentication() {
   $('#login-password').value = '';
   $('#verify-otp').value = '';
   resetProfilePanels();
+  window.dispatchEvent(new Event('ecosort-logout'));
 }
 async function logout(all = false) {
   const button = all ? $('#logout-all') : $('#logout');
