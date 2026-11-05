@@ -18,3 +18,8 @@ local-mailbox/
 
 # Local browser test screenshots
 docs/ui-evidence/
+
+# Private deployment environment files
+.env.*
+!.env.example
+!.env.production.example

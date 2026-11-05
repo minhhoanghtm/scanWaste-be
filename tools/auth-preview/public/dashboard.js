@@ -12,7 +12,7 @@
   function message(id, text = '', error = false) { const target = el(id); target.textContent = text; target.hidden = !text; target.classList.toggle('success', !error); }
   function fail(id, error) { if (['UNAUTHORIZED','SESSION_REVOKED','TOKEN_EXPIRED','INVALID_REFRESH_TOKEN','REFRESH_TOKEN_REUSED'].includes(error.code)) { clearAuthentication(); showScreen('login'); showMessage('#login-message', error.message); } else message(id, error.message, true); }
   function card(title, text) { const c = node('article', undefined, 'feature-card'); c.append(node('h2', title)); if (text) c.append(node('p', text)); return c; }
-  function image(url) { if (typeof url !== 'string' || !url.startsWith('/uploads/')) return null; const img = node('img'); img.src = new URL(url, `http://${location.hostname}:5010`).href; img.alt = 'Ảnh phân loại rác'; img.className = 'result-image'; return img; }
+  function image(url) { if (typeof url !== 'string' || !url.startsWith('/uploads/')) return null; const img = node('img'); img.src = new URL(url, location.origin).href; img.alt = 'Ảnh phân loại rác'; img.className = 'result-image'; return img; }
   function button(label, action) { const b = node('button', label, 'secondary-button'); b.type = 'button'; b.addEventListener('click', action); return b; }
   function pagination(prefix, data, page) { el(`${prefix}-prev`).disabled = page <= 1; el(`${prefix}-next`).disabled = !data.hasNextPage && page * (data.limit || 20) >= data.totalCount; el(`${prefix}-page`).textContent = data.totalCount ? `${page} / ${data.totalPages}` : '0 kết quả'; }
   function activityRow(item) { const li = node('li'); const badge = node('span', undefined, 'activity-icon'); badge.append(icon(item.type === 'earned' ? 'recycle' : 'gift')); const copy = node('div', undefined, 'activity-copy'); copy.append(node('strong', item.title || (item.type === 'earned' ? 'Phân loại rác' : 'Đổi quà')), node('small', `${date(item.occurredAt)} · ${item.type === 'earned' ? 'Tích điểm' : 'Đổi quà'}`)); li.append(badge, copy, node('span', `${item.points > 0 ? '+' : ''}${number(item.points)} điểm`, `activity-amount${item.type === 'redeemed' ? ' spent' : ''}`)); return li; }
@@ -99,7 +99,20 @@
       pagination('stations',data.pagination,stationPage); message('stations-message',data.items.length ? (data.radiusExpanded ? `Đã mở rộng tìm kiếm trong ${data.radiusKm} km.` : '') : 'Không có điểm thu gom phù hợp quanh vị trí này.');
     } catch(error) { if(current()) fail('stations-message',error); } finally { if(current()) el('locate-stations').disabled=false; }
   }
-  function rewards(path = '/') { rewardOrigin = `http://${location.hostname}:8081`; const url = new URL(path,rewardOrigin).href; el('rewards-frame').src=url; el('rewards-fullscreen').href=url; }
+  async function rewards(path = '/') {
+    const current = valid('rewards');
+    try {
+      if (!rewardOrigin) {
+        const response = await fetch('/runtime-config.json');
+        if (!response.ok) throw new Error('Chưa lấy được cấu hình màn đổi quà.');
+        rewardOrigin = (await response.json()).rewardsUrl;
+      }
+      if (!current()) return;
+      if (!rewardOrigin) { message('rewards-message', 'Màn đổi quà chưa được kết nối. Bạn vẫn có thể xem điểm và ví voucher trong Hồ sơ.'); return; }
+      const url = new URL(path, rewardOrigin).href;
+      el('rewards-frame').src = url; el('rewards-fullscreen').href = url;
+    } catch (error) { if (current()) fail('rewards-message', error); }
+  }
   window.addEventListener('ecosort-profile',event=>renderUser(event.detail));
   window.addEventListener('ecosort-screen',event=> { const name = event.detail; if(name==='home') loadHome(); else if(name==='lookup') lookup(); else if(name==='history') history(); else if(name==='activity') activity(); else if(name==='wallet') wallet(); else if(name==='statistics') statistics(); else if(name==='stations') { loadGuides().catch(error=>fail('stations-message',error)); if(!coords) message('stations-message','Bấm Dùng vị trí hiện tại để tìm trạm gần bạn.'); else stations(); } else if(name==='rewards' && !el('rewards-frame').src) rewards(); });
   window.addEventListener('ecosort-logout',()=> { for(const key in requests) requests[key]++; scanFile=null; detailId=null; if(previewUrl) URL.revokeObjectURL(previewUrl); previewUrl=null; el('scan-preview').removeAttribute('src'); el('scan-preview').hidden=true; el('scan-submit').hidden=true; el('scan-result').replaceChildren(); el('scan-result').hidden=true; el('rewards-frame').removeAttribute('src'); ['home-activity','all-activity','scan-history-list','classification-detail','voucher-cards','personal-statistics','station-cards'].forEach(id=>el(id).replaceChildren()); el('feedback-form').reset(); });
