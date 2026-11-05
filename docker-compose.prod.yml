@@ -1,0 +1,166 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: scanwaste-nginx-prod
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - uploads_data:/var/www/uploads:ro
+      - certbot_etc:/etc/letsencrypt
+      - certbot_var:/var/lib/letsencrypt
+      - certbot_www:/var/www/certbot
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - scanwaste-prod-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${BACKEND_IMAGE:-scanwaste-backend:latest}
+    container_name: scanwaste-backend-prod
+    restart: always
+    expose:
+      - "5000"
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017/waste_classification}
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in environment}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-15m}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - REDIS_PREFIX=${REDIS_PREFIX:-scanwaste:}
+      - REFRESH_TTL_SECONDS=${REFRESH_TTL_SECONDS:-604800}
+      - OTP_SECRET=${OTP_SECRET:?Set OTP_SECRET in environment}
+      - OTP_TTL_SECONDS=${OTP_TTL_SECONDS:-300}
+      - OTP_RESEND_SECONDS=${OTP_RESEND_SECONDS:-60}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - SOCIAL_PUBLIC_ORIGIN=${SOCIAL_PUBLIC_ORIGIN:-}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-5242880}
+      - UPLOAD_DIR=uploads
+      - AI_SERVICE_URL=http://ai-inference:5005
+      - AI_PROVIDER=fastapi_tflite
+      - INFERENCE_TIMEOUT_MS=5000
+    volumes:
+      - uploads_data:/app/uploads
+      - ./models:/app/models:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      ai-inference:
+        condition: service_healthy
+    networks:
+      - scanwaste-prod-network
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:5000/api/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  ai-inference:
+    build:
+      context: .
+      dockerfile: ai_service/Dockerfile
+    image: ${AI_IMAGE:-scanwaste-ai:latest}
+    container_name: scanwaste-ai-inference-prod
+    restart: always
+    expose:
+      - "5005"
+    environment:
+      - AI_SERVICE_PORT=5005
+      - MODEL_VERSION=v3
+    volumes:
+      - ./models:/app/models:ro
+      - uploads_data:/app/uploads:ro
+    networks:
+      - scanwaste-prod-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5005/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  redis:
+    image: redis:7-alpine
+    container_name: scanwaste-redis-prod
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    restart: always
+    volumes:
+      - redis_auth_data:/data
+    networks:
+      - scanwaste-prod-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mongodb:
+    image: mongo:7.0
+    container_name: scanwaste-mongodb-prod
+    restart: always
+    environment:
+      - MONGO_INITDB_DATABASE=waste_classification
+    volumes:
+      - mongodata:/data/db
+    networks:
+      - scanwaste-prod-network
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'db.runCommand(\"ping\").ok' | mongosh localhost:27017/waste_classification --quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+volumes:
+  redis_auth_data:
+  mongodata:
+  uploads_data:
+  certbot_etc:
+  certbot_var:
+  certbot_www:
+
+networks:
+  scanwaste-prod-network:
+    driver: bridge

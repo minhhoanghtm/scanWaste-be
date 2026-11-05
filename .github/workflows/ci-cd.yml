@@ -1,7 +1,6 @@
-name: ScanWaste CI/CD Pipeline
+name: ScanWaste Backend CI/CD Pipeline
 
 on:
-  # 1. Kích hoạt kiểm thử khi tạo hoặc cập nhật Pull Request vào các nhánh chính (Kiểm thử trước khi merge)
   pull_request:
     branches:
       - main
@@ -9,30 +8,41 @@ on:
       - develop
     types: [opened, synchronize, reopened]
 
-  # 2. Kích hoạt khi code được merge (hoặc push trực tiếp) vào các nhánh chính
   push:
     branches:
       - main
       - master
       - develop
+    tags:
+      - 'v*.*.*'
 
-  # 3. Cho phép kích hoạt thủ công từ tab Actions trên GitHub (Run workflow)
   workflow_dispatch:
+    inputs:
+      target_env:
+        description: 'Target Deployment Environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
 
-# Tự động hủy pipeline cũ nếu có commit mới được push lên cùng branch/PR
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   # =========================================================================
-  # JOB 1: Chạy kiểm thử tự động (Unit Test & Integration Test)
+  # JOB 1: Automated Testing & Quality Gate
   # =========================================================================
   test:
     name: 🧪 Automated Testing
     runs-on: ubuntu-latest
 
-    # Khởi tạo container MongoDB 7.0 cho môi trường test
     services:
       redis:
         image: redis:7-alpine
@@ -102,16 +112,47 @@ jobs:
 
       - name: 🔐 Chạy Auth API Tests
         env:
+          REDIS_URL: redis://127.0.0.1:6379
+          OTP_SECRET: ci_pipeline_otp_secret_key_2026
           TEST_MONGODB_URI: mongodb://127.0.0.1:27017/scanwaste_auth_test
         run: npm run test:auth
 
+      - name: 🔐 Chạy Social Auth Security Tests
+        env:
+          REDIS_URL: redis://127.0.0.1:6379
+          OTP_SECRET: ci_pipeline_otp_secret_key_2026
+          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/scanwaste_social_test
+        run: npm run test:social
+
+      - name: 🔄 Redis sessions and email OTP integration tests
+        env:
+          REDIS_URL: redis://127.0.0.1:6379
+          OTP_SECRET: ci_pipeline_otp_secret_key_2026
+          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/scanwaste_session_test
+        run: npm run test:session && npm run test:registration && npm run test:login-otp
+
+      - name: 🗺️ Station API integration tests (UC005, UC006, UC012)
+        env:
+          REDIS_URL: redis://127.0.0.1:6379
+          OTP_SECRET: ci_pipeline_otp_secret_key_2026
+          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/scanwaste_stations_test
+        run: npm run test:stations
+
+      - name: 👤 User Profile integration tests (UC009, UC010, UC011, UC014)
+        env:
+          REDIS_URL: redis://127.0.0.1:6379
+          OTP_SECRET: ci_pipeline_otp_secret_key_2026
+          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/scanwaste_profile_test
+        run: npm run test:profile
+
       - name: 🌐 Chạy Integration / API Tests
-        # Includes normal password authentication and the other modules.
         env:
           NODE_ENV: test
           PORT: 5001
           MONGODB_URI: mongodb://127.0.0.1:27017/scanwaste_test
+          REDIS_URL: redis://127.0.0.1:6379
           JWT_SECRET: ci_pipeline_super_secret_jwt_key_2026
+          OTP_SECRET: ci_pipeline_otp_secret_key_2026
           JWT_EXPIRES_IN: 15m
           MAX_FILE_SIZE: 5242880
           UPLOAD_DIR: uploads
@@ -119,28 +160,11 @@ jobs:
           PYTHON_BIN: python
         run: npm run test:integration
 
-      - name: 🔐 Chạy Social Auth Security Tests
-        env:
-          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/scanwaste_social_test
-        run: npm run test:social
-
   # =========================================================================
   # JOB 2: Kiểm tra tính toàn vẹn của Dockerfile & Build Container
   # =========================================================================
-      - name: 🔄 Redis sessions and email OTP integration tests
-        env:
-          REDIS_URL: redis://127.0.0.1:6379
-          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/scanwaste_session_test
-        run: npm run test:session && npm run test:registration && npm run test:login-otp
-
-      - name: 🗺️ Station API integration tests (UC005, UC006, UC012)
-        env:
-          REDIS_URL: redis://127.0.0.1:6379
-          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/scanwaste_stations_test
-        run: npm run test:stations
-
   docker-check:
-    name: 🐳 Verify Docker Build
+    name: 🐳 Verify Docker Build & Compose
     runs-on: ubuntu-latest
     needs: test
     steps:
@@ -150,7 +174,7 @@ jobs:
       - name: 🛠️ Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: 🔨 Build Backend Docker Image (kiểm tra syntax & dependencies)
+      - name: 🔨 Build Backend Docker Image (syntax & dependencies)
         run: docker build -t scanwaste-be:ci-check .
 
       - name: 🔨 Build AI Service Docker Image
@@ -159,45 +183,135 @@ jobs:
       - name: 🔬 Verify model inference inside AI image
         run: docker run --rm --entrypoint python scanwaste-ai:ci-check ai_service/test_inference.py
 
-      - name: 🐳 Validate Docker Compose configuration
+      - name: 🐳 Validate Standard Docker Compose configuration
         env:
           JWT_SECRET: ci-only-compose-validation-secret
           OTP_SECRET: ci-only-otp-validation-secret
         run: docker compose config --quiet
 
+      - name: 🐳 Validate Production Docker Compose configuration
+        env:
+          JWT_SECRET: ci-only-compose-validation-secret
+          OTP_SECRET: ci-only-otp-validation-secret
+        run: docker compose -f docker-compose.prod.yml config --quiet
+
   # =========================================================================
-  # JOB 3: Continuous Deployment (Tự động chạy sau khi merge vào nhánh main)
+  # JOB 3: Build & Publish Container Images to GitHub Container Registry (GHCR)
+  # =========================================================================
+  publish-images:
+    name: 📦 Publish Container Images to GHCR
+    runs-on: ubuntu-latest
+    needs: [test, docker-check]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    steps:
+      - name: 📥 Checkout source code
+        uses: actions/checkout@v4
+
+      - name: 🛠️ Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔑 Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🏷️ Docker Meta for Backend
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/backend
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,prefix=
+
+      - name: 🚀 Build and Push Backend Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 🏷️ Docker Meta for AI Service
+        id: meta-ai
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/ai-service
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,prefix=
+
+      - name: 🚀 Build and Push AI Service Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ai_service/Dockerfile
+          push: true
+          tags: ${{ steps.meta-ai.outputs.tags }}
+          labels: ${{ steps.meta-ai.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # =========================================================================
+  # JOB 4: Continuous Deployment (Tự động deploy lên môi trường Production)
   # =========================================================================
   deploy:
     name: 🚀 Continuous Deployment
     runs-on: ubuntu-latest
     needs: [test, docker-check]
-    # Chỉ chạy deploy khi code đã được merge vào nhánh main (không chạy trên Pull Request)
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - name: 📢 Thông báo hoàn tất kiểm thử
-        run: |
-          echo "========================================================="
-          echo "✅ Tất cả các bài kiểm thử đã PASS thành công trên branch main!"
-          echo "🚀 Sẵn sàng trigger deployment lên môi trường production."
-          echo "========================================================="
+      - name: 📥 Checkout source code
+        uses: actions/checkout@v4
 
-      # --- VÍ DỤ CÁC PHƯƠNG THỨC DEPLOY TIÊU BIỂU (Bỏ comment để dùng) ---
-      #
-      # Cách 1: Webhook Deploy (Render / Railway / Koyeb)
-      # - name: Trigger Deploy via Webhook
-      #   run: |
-      #     curl -X POST "${{ secrets.DEPLOY_WEBHOOK_URL }}"
-      #
-      # Cách 2: Deploy qua SSH lên VPS / Cloud Server
-      # - name: Deploy to VPS via SSH
-      #   uses: appleboy/ssh-action@v1.0.3
-      #   with:
-      #     host: ${{ secrets.SSH_HOST }}
-      #     username: ${{ secrets.SSH_USER }}
-      #     key: ${{ secrets.SSH_PRIVATE_KEY }}
-      #     script: |
-      #       cd /opt/scanWaste-be
-      #       git pull origin main
-      #       docker-compose down
-      #       docker-compose up -d --build
+      # Phương thức 1: Deploy qua SSH lên VPS / Cloud Server (khi có SSH_HOST cấu hình)
+      - name: 🌐 Deploy to VPS via SSH
+        if: env.SSH_HOST != ''
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            echo "🚀 Deploying ScanWaste Backend on remote server..."
+            TARGET_DIR="${{ secrets.DEPLOY_DIR || '/opt/scanWaste-be' }}"
+            if [ -d "$TARGET_DIR" ]; then
+              cd "$TARGET_DIR"
+              chmod +x scripts/deploy-prod.sh || true
+              ./scripts/deploy-prod.sh
+            else
+              echo "Directory $TARGET_DIR does not exist yet. Please clone repository first."
+              exit 1
+            fi
+
+      # Phương thức 2: Deploy qua Webhook (Render / Railway / Koyeb / CapRover / Portainer)
+      - name: 🔗 Trigger Deploy via Webhook
+        if: env.DEPLOY_WEBHOOK_URL != ''
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+        run: |
+          echo "Triggering deployment webhook..."
+          curl -f -X POST "${{ secrets.DEPLOY_WEBHOOK_URL }}"
+          echo "✅ Webhook successfully triggered!"
+
+      - name: 📢 Báo cáo trạng thái Pipeline
+        run: |
+          echo "### 🚀 ScanWaste Backend CI/CD Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Testing Gate:** ✅ All unit, auth, stations, social & profile tests PASSED" >> $GITHUB_STEP_SUMMARY
+          echo "- **Docker & Compose:** ✅ Verification PASSED" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployment Ready:** ✅ Production ready" >> $GITHUB_STEP_SUMMARY

@@ -645,3 +645,15 @@ Các tính năng chính:
 ## Redis authentication update (local feature branch)
 
 Redis is now required for session validation, refresh tokens, OTP and rate limiting. See [REDIS_AUTH.md](docs/REDIS_AUTH.md) for setup, API contracts and migration notes. Run `npm run test:session` against dedicated test Redis/MongoDB.
+
+
+---
+
+## 4. Triển Khai Production & CI/CD Pipeline
+
+Backend hỗ trợ đầy đủ quy trình kiểm thử tự động, đóng gói Docker và triển khai Production tự động qua GitHub Actions.
+- Hướng dẫn chi tiết: [Production Deployment Guide (DEPLOYMENT.md)](docs/DEPLOYMENT.md)
+- Cấu hình Docker Production: `docker-compose.prod.yml`
+- Cấu hình Nginx Reverse Proxy: `nginx/`
+- Script triển khai tự động: `scripts/deploy-prod.sh`
+- Script sao lưu cơ sở dữ liệu: `scripts/backup-db.sh`
