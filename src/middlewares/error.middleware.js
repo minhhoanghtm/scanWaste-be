@@ -73,7 +73,7 @@ const errorMiddleware = (err, req, res, next) => {
     console.error('[Error Middleware]', err);
   }
 
-  const publicServiceErrors = ['SOCIAL_NOT_CONFIGURED', 'PROVIDER_UNAVAILABLE', 'AUTH_STORE_UNAVAILABLE', 'EMAIL_NOT_CONFIGURED'];
+  const publicServiceErrors = ['SOCIAL_NOT_CONFIGURED', 'PROVIDER_UNAVAILABLE', 'AUTH_STORE_UNAVAILABLE', 'EMAIL_NOT_CONFIGURED', 'EMAIL_DELIVERY_UNAVAILABLE'];
   if (statusCode >= 500 && !publicServiceErrors.includes(errorCode)) {
     message = 'Internal Server Error';
     errors = [];

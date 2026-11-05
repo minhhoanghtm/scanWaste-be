@@ -313,7 +313,7 @@ function socialMessage(message) {
 
 function showSocialSetup() {
   $('#social-setup-title').textContent = 'Kết nối tài khoản Google';
-  $('#social-setup-description').textContent = 'Tạo OAuth Client loại Web application trong Google Cloud, khai báo origin http://localhost:5173 rồi cấu hình GOOGLE_CLIENT_ID trong file .env của backend.';
+  $('#social-setup-description').textContent = `Tạo OAuth Client loại Web application trong Google Cloud, khai báo origin ${location.origin} rồi cấu hình GOOGLE_CLIENT_ID trong file .env của backend.`;
   $('#social-setup-link').href = 'https://console.cloud.google.com/auth/clients';
   $('#social-setup-link').textContent = 'Mở Google Cloud Console ↗';
   $('#social-setup').showModal();

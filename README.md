@@ -657,3 +657,7 @@ Backend hỗ trợ đầy đủ quy trình kiểm thử tự động, đóng gó
 - Cấu hình Nginx Reverse Proxy: `nginx/`
 - Script triển khai tự động: `scripts/deploy-prod.sh`
 - Script sao lưu cơ sở dữ liệu: `scripts/backup-db.sh`
+
+## Demo web trên hosting miễn phí
+
+Xem [hướng dẫn demo HTTPS và OTP email thật](docs/DEMO_HOSTING.md), dùng Blueprint riêng `render.demo.yaml`. Đây là cấu hình demo cần tài khoản Render, MongoDB Atlas và Brevo; chưa phải một deployment đã chạy.
