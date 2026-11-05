@@ -19,6 +19,27 @@ class StatisticsController {
       next(error);
     }
   }
+
+  // UC013: Get ESG Budget
+  async getEsgBudget(req, res, next) {
+    try {
+      const result = statisticsService.getEsgBudget();
+      return sendSuccess(res, 'Get ESG budget successfully', result, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // UC013: Update ESG Budget
+  async updateEsgBudget(req, res, next) {
+    try {
+      const { budget } = req.body || {};
+      const result = statisticsService.updateEsgBudget(budget);
+      return sendSuccess(res, 'Cập nhật ngân sách ESG thành công', result, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new StatisticsController();

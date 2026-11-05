@@ -4,6 +4,13 @@ const Feedback = require('../feedback/feedback.model');
 const { DatasetItem } = require('../dataset/dataset.model');
 const ModelRegistry = require('../ai/modelRegistry/modelRegistry.model');
 const { SUPPORTED_WASTE_CLASSES } = require('../ai/ai.config');
+// UC013: Persistent ESG Budget store
+let esgBudgetData = {
+  budget: 10000000,
+  spent: 3500000,
+  lastUpdated: new Date().toISOString(),
+};
+
 
 class StatisticsService {
   /**
@@ -332,6 +339,40 @@ class StatisticsService {
       moderatedImagesCount,
       activeModelAccuracy,
     };
+  }
+
+  // UC013: ESG Budget management
+  getEsgBudget() {
+    const remaining = Math.max(0, esgBudgetData.budget - esgBudgetData.spent);
+    const progress = esgBudgetData.budget > 0
+      ? Math.min(esgBudgetData.spent / esgBudgetData.budget, 1)
+      : 0;
+    return {
+      budget: esgBudgetData.budget,
+      spent: esgBudgetData.spent,
+      remaining,
+      progress,
+      unit: 'VND',
+      currency: 'đ',
+      lastUpdated: esgBudgetData.lastUpdated,
+    };
+  }
+
+  updateEsgBudget(value) {
+    const numValue = Number(value);
+    if (!Number.isFinite(numValue) || numValue <= 0) {
+      const error = new Error('Vui lòng nhập ngân sách lớn hơn 0.');
+      error.statusCode = 400;
+      throw error;
+    }
+    if (numValue < esgBudgetData.spent) {
+      const error = new Error('Ngân sách mới không được thấp hơn số tiền đã sử dụng.');
+      error.statusCode = 400;
+      throw error;
+    }
+    esgBudgetData.budget = numValue;
+    esgBudgetData.lastUpdated = new Date().toISOString();
+    return this.getEsgBudget();
   }
 }
 
