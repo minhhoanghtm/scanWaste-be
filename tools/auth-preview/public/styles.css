@@ -11,3 +11,68 @@
 @keyframes spin{to{transform:rotate(360deg)}}@media(min-width:900px){.app-shell{margin-top:30px;margin-bottom:30px}}@media(max-width:750px){body{background:#faf9ff}.app-shell{margin:0 auto;min-height:100vh;border:0;border-radius:0;box-shadow:none}.connection{position:absolute;top:8px;right:10px;padding:5px 8px;font-size:8px;gap:5px;box-shadow:none;background:#ffffffad}.connection-dot{width:5px;height:5px}.brand-header{padding-top:12px}.register-screen .register-top{margin-top:13px}}@media(max-width:370px){.screen{padding-left:15px;padding-right:15px}.form-card{padding-left:16px;padding-right:16px}.welcome h1,.register-header h1{font-size:28px}.verified{font-size:9px}.input-wrap{padding-left:12px;gap:8px}.input-wrap input{font-size:13px}.reward-badge{font-size:10px}.reward-badge strong{font-size:17px}.switch-prompt{font-size:12px}.login-options .text-button,.checkbox-label{font-size:10px}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 .recovery-screen{padding-top:24px;min-height:680px}.recovery-header{text-align:center;margin:34px 0 26px}.recovery-icon{width:76px;height:76px;margin:0 auto 22px;display:grid;place-items:center;border-radius:24px;background:var(--mint);color:var(--green)}.recovery-icon svg{width:34px;height:34px}.recovery-header h1{font-size:28px;letter-spacing:-.7px;line-height:1.3;margin:0 0 14px}.recovery-header p{font-size:13px;line-height:1.9;color:var(--muted);overflow-wrap:anywhere}.recovery-header strong{color:var(--green);font-weight:600}.otp-input{letter-spacing:3px}.otp-input::placeholder{letter-spacing:0}.recovery-hint{font-size:11px;line-height:1.7;color:var(--muted);margin:10px 0 0}.resend-button{display:block;margin:22px auto 0;padding:8px 10px;min-height:42px}.resend-button:disabled{color:var(--muted);opacity:.75}.recovery-screen .primary-button{font-size:15px}button:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+
+/* Personal profile: mint header, available balance, account utilities. */
+.profile-screen{padding-top:0;background:#f7f9f8;text-align:left;padding-bottom:28px}
+.profile-hero{margin:0 -22px;padding:38px 22px 54px;text-align:center;background:radial-gradient(at 20% 10%,#f1fff4,transparent 65%),linear-gradient(140deg,#d4f5e5,#e3f8ec);border-radius:0 0 34px 34px}
+.profile-hero h1{font-size:14px;font-weight:500;color:#436457;margin:12px 0 22px}
+.profile-photo{width:92px;height:92px;border:4px solid #eafff0;outline:3px solid #53ae7a;font-size:34px;overflow:hidden}
+.avatar img,.home-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.home-avatar{overflow:hidden;padding:0}
+.avatar-actions{display:flex;justify-content:center;gap:18px;margin:12px 0 15px;font-size:12px}
+.profile-name-row{display:flex;justify-content:center;align-items:center;gap:9px;flex-wrap:wrap}
+.profile-name-row h2{font-size:21px;margin:0;overflow-wrap:anywhere;max-width:100%;letter-spacing:-.5px}
+.edit-profile-button{border:1px solid #cfe7da;border-radius:20px;background:white;padding:6px 10px;color:var(--green);font-size:11px;white-space:nowrap}
+.profile-hero .profile-intro{margin:8px 0 0;color:#396a53}
+.profile-hero .role-badge{margin-bottom:0}
+.points-card{position:relative;margin:-33px 0 20px;background:white;border:1px solid #edf1ee;border-radius:20px;padding:24px 20px 0;text-align:center;box-shadow:0 7px 18px #17372812}
+.points-card h2{font-size:12px;font-weight:600;letter-spacing:.8px;margin:0 0 10px;color:#3c5147}
+.points-value{display:flex;justify-content:center;align-items:baseline;gap:7px;color:#263c32;flex-wrap:wrap;overflow-wrap:anywhere}
+.points-value strong{font-size:40px;line-height:1.2;letter-spacing:-1.5px;max-width:100%}
+.points-value span{font-size:14px}
+.points-value svg{width:29px;height:29px;color:#4da56a;align-self:center}
+.points-card>p{font-size:11px;color:#7b8981;margin:10px 0 19px}
+.points-breakdown{display:grid;grid-template-columns:1fr 1fr;margin:0 -20px;padding:13px 8px;background:#fbfdfb;border-radius:0 0 20px 20px;border-top:1px solid #edf3ee}
+.points-breakdown>div{border:0;padding:0 8px;display:block;text-align:center;min-width:0}
+.points-breakdown>div+div{border-left:1px solid #e3ece5}
+.points-breakdown dt{text-align:center;font-size:10px;color:#78897e}
+.points-breakdown dd{text-align:center;font-size:16px;color:var(--green);margin-top:5px;overflow-wrap:anywhere}
+.profile-menu{display:grid;gap:12px;margin-bottom:21px}
+.profile-menu-item{display:flex;align-items:center;gap:12px;text-align:left;background:#fff;border:1px solid #e9efeb;box-shadow:0 4px 9px #17372808;border-radius:16px;padding:16px 14px;width:100%;color:var(--ink)}
+.profile-menu-item>span:nth-child(2){flex:1;min-width:0}
+.profile-menu-item strong{display:block;font-size:13px;font-weight:600}
+.profile-menu-item small{display:block;font-size:10px;color:#7c8c81;margin-top:5px;line-height:1.5}
+.menu-icon{display:grid;place-items:center;background:#e1f4f2;border-radius:10px;color:#258e80;width:36px;height:36px;font-size:24px;flex-shrink:0}
+.gift-menu-icon{background:#fff0d8;color:#c68e35}
+.menu-chevron{color:#85a392;font-size:24px}
+.profile-menu-item[aria-expanded=true]{border-color:#79ba9b;background:#f0fbf4}
+.profile-panel{background:white;border:1px solid #e3eee6;border-radius:16px;padding:18px 14px}
+.profile-panel h2,.profile-edit-form h2{font-size:16px;margin:0 0 18px}
+.profile-panel label{font-size:12px;margin-right:8px}
+.profile-panel select{max-width:100%;font:inherit;font-size:12px;padding:8px 12px;border:1px solid #d6e8dc;border-radius:10px;background:#f7fcf8;color:#2e6048}
+.activity-list{list-style:none;padding:0;margin:12px 0 0}
+.activity-list li{display:flex;gap:12px;justify-content:space-between;padding:14px 0;border-bottom:1px solid #edf2ef;font-size:11px;line-height:1.6}
+.activity-list li:last-child{border:0}
+.activity-list li>div{min-width:0;overflow-wrap:anywhere}
+.activity-list strong{font-size:12px;font-weight:550}
+.activity-list small{display:block;color:#839087;font-size:10px;margin-top:4px}
+.activity-list li>span{font-weight:600;flex-shrink:0;font-size:10px;max-width:42%;text-align:right}
+.points-earned{color:#00805d}.points-redeemed{color:#b67824}
+.activity-list small.voucher-code{font-weight:600;color:#347154;word-break:break-all}
+.history-pagination{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:11px;margin-top:12px}
+.secondary-button{border:1px solid #d5e6dc;background:white;color:#32664c;border-radius:13px;padding:10px 14px;font-size:12px}
+.secondary-button:disabled{opacity:.4}
+.profile-edit-form{margin-bottom:20px;padding:21px 18px;border:1px solid #d9ebdf;text-align:left}
+.profile-edit-actions{display:flex;align-items:center;gap:12px}
+.profile-edit-actions .primary-button{min-height:44px;font-size:13px}
+.account-details.profile-card{margin:0 0 24px;padding:20px;border-radius:18px;border:1px solid #e8efea}
+.account-details h2{margin:0 0 16px;font-size:15px}
+.account-details dl{font-size:11px}
+.account-details dl>div{padding:13px 0}
+.account-details dt{flex-shrink:0;max-width:40%}
+.profile-screen .account-linking{text-align:center}
+.profile-screen>#profile-message:not([hidden]){position:relative;margin:10px 0 46px}
+.profile-screen>.primary-button{font-size:13px;min-height:48px}
+.profile-screen .logout-button{padding:13px;border-radius:14px}
+.member-nav{position:sticky;bottom:0;margin-bottom:0;border-radius:0;z-index:3}
+@media(max-width:370px){.profile-hero{margin-left:-15px;margin-right:-15px}.points-value strong{font-size:34px}.activity-list li{gap:6px}.points-breakdown dt{font-size:9px}}

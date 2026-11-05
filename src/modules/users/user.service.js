@@ -1,5 +1,7 @@
 
 const User = require('./user.model');
+const { getPointSummary } = require('./user.points.service');
+const { normalizeEmail, normalizeVietnamesePhone } = require('../auth/auth.utils');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -36,7 +38,8 @@ class UserService {
   }
 
   async getProfile(user) {
-    const points = Number(user.totalPoints || 0);
+    const summary = await getPointSummary(user);
+    const points = summary.totalPoints;
 
     return {
       id: user.id || user._id,
@@ -45,7 +48,8 @@ class UserService {
       phone: user.phone || '',
       role: user.role,
       emailVerified: user.emailVerified,
-      totalPoints: points,
+      avatarUrl: user.avatarUrl || '',
+      ...summary,
       totalClassifications: Number(user.totalClassifications || 0),
       currentStreak: Number(user.currentStreak || 0),
       tier: user.tier || getTier(points),
@@ -89,8 +93,16 @@ class UserService {
 
       updates[field] = value.trim();
 
+      if (field === 'name' && (!updates.name || updates.name.length > 100)) {
+        throw createError('Name must contain 1 to 100 characters', 400);
+      }
       if (field === 'email') {
-        updates.email = updates.email.toLowerCase();
+        updates.email = normalizeEmail(value);
+        if (!updates.email) throw createError('Invalid email address', 400);
+      }
+      if (field === 'phone') {
+        updates.phone = normalizeVietnamesePhone(value);
+        if (!updates.phone) throw createError('Invalid Vietnamese mobile number', 400);
       }
     }
 

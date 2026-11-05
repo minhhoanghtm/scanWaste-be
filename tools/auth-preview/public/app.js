@@ -51,6 +51,7 @@ function showScreen(name) {
   });
   const titles = { login: 'Đăng nhập', register: 'Đăng ký', home: 'Trang chủ', profile: 'Hồ sơ', verify: 'Xác minh email', forgot: 'Quên mật khẩu', reset: 'Đặt lại mật khẩu' };
   document.title = `EcoSort AI · ${titles[name]}`;
+  if (name === 'profile') loadMemberProfile();
   window.scrollTo({ top: 0, behavior: 'instant' });
   document.querySelector(`#${name}-screen h1`)?.setAttribute('tabindex', '-1');
   document.querySelector(`#${name}-screen h1`)?.focus({ preventScroll: true });
@@ -101,13 +102,13 @@ function updateStrength() {
   $('#strength-label').textContent = password ? ['Yếu', 'Yếu', 'Trung bình', 'Khá mạnh', 'Mạnh'][score] : 'Chưa nhập';
 }
 
-async function api(path, body, retry = true) {
+async function api(path, body, retry = true, method = body === undefined ? 'GET' : 'POST') {
   let response;
   try {
     response = await fetch(`/api${path}`, {
-      method: body === undefined ? 'GET' : 'POST',
-      headers: { 'Content-Type': 'application/json', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      method,
+      headers: { ...(body instanceof FormData ? {} : { 'Content-Type': 'application/json' }), ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+      ...(body === undefined ? {} : { body: body instanceof FormData ? body : JSON.stringify(body) }),
       signal: AbortSignal.timeout(20000),
     });
   } catch {
@@ -124,7 +125,7 @@ async function api(path, body, retry = true) {
         .finally(() => { refreshing = null; });
     }
     await refreshing;
-    return api(path, body, false);
+    return api(path, body, false, method);
   }
   if (!response.ok) {
     const error = new Error(messageForCode[payload.code] || payload.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
@@ -143,9 +144,14 @@ function fillProfile(user) {
   $('#profile-email').textContent = user.email;
   $('#profile-phone').textContent = user.phone || 'Chưa cập nhật';
   $('#profile-role').textContent = user.role === 'admin' ? 'Quản trị viên' : 'Thành viên EcoSort';
-  $('#profile-avatar').textContent = user.name.trim().split(/\s+/).slice(-1)[0].slice(0, 1).toUpperCase();
+  renderAvatar($('#profile-avatar'), user);
   $('#home-name').textContent = user.name;
-  $('#home-avatar').textContent = $('#profile-avatar').textContent;
+  renderAvatar($('#home-avatar'), user);
+  $('#remove-avatar').hidden = !user.avatarUrl;
+  for (const field of ['availablePoints', 'totalPoints', 'spentPoints']) {
+    const id = { availablePoints: 'available', totalPoints: 'total', spentPoints: 'spent' }[field];
+    $(`#profile-${id}-points`).textContent = new Intl.NumberFormat('vi-VN').format(user[field] || 0);
+  }
   $('#profile-created').textContent = user.createdAt ? new Intl.DateTimeFormat('vi-VN').format(new Date(user.createdAt)) : 'Chưa có thông tin';
   $('#profile-session').textContent = 'Đã xác thực';
   showMessage('#profile-message', '');
@@ -249,6 +255,7 @@ function clearAuthentication() {
   accessToken = null; refreshToken = null; signedInProfile = null; pendingRegistration = null; pendingLogin = null;
   $('#login-password').value = '';
   $('#verify-otp').value = '';
+  resetProfilePanels();
 }
 async function logout(all = false) {
   const button = all ? $('#logout-all') : $('#logout');
@@ -272,16 +279,7 @@ $('#verify-back').addEventListener('click', () => {
   else if (pendingLogin) { clearAuthentication(); showScreen('login'); }
   else logout();
 });
-$('#refresh-profile').addEventListener('click', async () => {
-  const button = $('#refresh-profile');
-  button.disabled = true;
-  try { fillProfile(await api('/users/me')); toast('Đã cập nhật hồ sơ từ máy chủ.'); }
-  catch (error) {
-    if (['TOKEN_EXPIRED', 'UNAUTHORIZED', 'SESSION_REVOKED', 'REFRESH_TOKEN_REUSED', 'INVALID_REFRESH_TOKEN'].includes(error.code)) {
-      clearAuthentication(); showScreen('login'); showMessage('#login-message', error.message);
-    } else showMessage('#profile-message', error.message);
-  } finally { button.disabled = false; }
-});
+$('#refresh-profile').addEventListener('click', loadMemberProfile);
 
 try { $('#login-identifier').value = localStorage.getItem('ecosort-remembered-identifier') || ''; } catch {}
 async function checkConnection() {
@@ -508,3 +506,187 @@ $('#reset-form').addEventListener('submit', async event => {
   } catch (error) { showMessage('#reset-message', error.message); }
   finally { loading($('#reset-submit'), false, 'Lưu mật khẩu mới'); }
 });
+
+
+// Profile uses the same authenticated backend and MongoDB as the rest of the app.
+let profileRequest = 0;
+let historyRequest = 0;
+let walletRequest = 0;
+let historyPage = 1;
+let historyHasNext = false;
+let profileSaving = false;
+const formatPoints = value => new Intl.NumberFormat('vi-VN').format(value);
+const formatDate = value => value ? new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value)) : 'Chưa có ngày';
+
+function renderAvatar(element, user) {
+  element.replaceChildren();
+  if (/^\/uploads\/avatars\/[a-f0-9-]+\.(png|jpg|webp)$/.test(user.avatarUrl || '')) {
+    const image = document.createElement('img');
+    image.src = user.avatarUrl;
+    image.alt = `Ảnh đại diện của ${user.name}`;
+    element.append(image);
+  } else element.textContent = user.name.trim().split(/\s+/).at(-1)?.slice(0, 1).toUpperCase() || 'E';
+}
+
+function resetProfilePanels() {
+  profileRequest++; historyRequest++; walletRequest++;
+  $('#profile-edit-form').hidden = true;
+  $('#avatar-input').value = '';
+  for (const panel of ['point-history', 'wallet']) {
+    $(`#${panel}-panel`).hidden = true;
+    $(`#${panel}-list`).replaceChildren();
+    document.querySelector(`[data-profile-panel="${panel}"]`).setAttribute('aria-expanded', 'false');
+  }
+  $('#profile-avatar').replaceChildren();
+  historyPage = 1;
+}
+
+function profileError(error, target = '#profile-message') {
+  if (['TOKEN_EXPIRED', 'UNAUTHORIZED', 'SESSION_REVOKED', 'REFRESH_TOKEN_REUSED', 'INVALID_REFRESH_TOKEN'].includes(error.code)) {
+    clearAuthentication(); showScreen('login'); showMessage('#login-message', error.message);
+  } else showMessage(target, error.message);
+}
+
+async function loadMemberProfile() {
+  if (!accessToken) return;
+  const generation = authGeneration;
+  const requestId = ++profileRequest;
+  $('#refresh-profile').disabled = true;
+  try {
+    const user = await api('/users/me');
+    if (generation !== authGeneration || requestId !== profileRequest) return;
+    fillProfile(user);
+    if (!$('#point-history-panel').hidden) loadPointHistory();
+    if (!$('#wallet-panel').hidden) loadWallet();
+  } catch (error) {
+    if (generation === authGeneration && requestId === profileRequest) profileError(error);
+  } finally { if (requestId === profileRequest) $('#refresh-profile').disabled = false; }
+}
+
+$('#edit-profile').addEventListener('click', () => {
+  if (!signedInProfile) return;
+  for (const field of ['name', 'email', 'phone']) $(`#edit-${field}`).value = signedInProfile[field] || '';
+  showMessage('#edit-profile-message', '');
+  $('#profile-edit-form').hidden = false;
+  $('#edit-name').focus();
+});
+$('#cancel-edit').addEventListener('click', () => {
+  $('#profile-edit-form').hidden = true;
+  $('#edit-profile').focus();
+});
+$('#profile-edit-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (profileSaving) return;
+  const name = $('#edit-name').value.trim();
+  const email = $('#edit-email').value.trim();
+  const rawPhone = $('#edit-phone').value.trim();
+  const phone = rawPhone ? normalizePhone(rawPhone) : '';
+  if (!name || name.length > 100) return showMessage('#edit-profile-message', 'Họ tên cần từ 1 đến 100 ký tự.');
+  if (rawPhone && !phone) return showMessage('#edit-profile-message', 'Số điện thoại Việt Nam chưa hợp lệ.');
+  const generation = authGeneration;
+  profileSaving = true;
+  loading($('#save-profile'), true, 'Lưu thay đổi');
+  showMessage('#edit-profile-message', '');
+  try {
+    const user = await api('/users/me', { name, email, phone }, true, 'PATCH');
+    if (generation !== authGeneration) return;
+    fillProfile(user);
+    $('#profile-edit-form').hidden = true;
+    $('#edit-profile').focus();
+    showMessage('#profile-message', 'Đã lưu thông tin cá nhân.', true);
+  } catch (error) { if (generation === authGeneration) profileError(error, '#edit-profile-message'); }
+  finally { profileSaving = false; loading($('#save-profile'), false, 'Lưu thay đổi'); }
+});
+$('#choose-avatar').addEventListener('click', () => $('#avatar-input').click());
+let avatarSaving = false;
+async function updateAvatar(file) {
+  if (avatarSaving) return;
+  if (file && (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024)) {
+    return showMessage('#profile-message', 'Chọn ảnh JPG, PNG hoặc WEBP, tối đa 5 MB.');
+  }
+  const generation = authGeneration;
+  avatarSaving = true;
+  $('#choose-avatar').disabled = $('#remove-avatar').disabled = true;
+  showMessage('#profile-message', 'Đang lưu ảnh đại diện…', true);
+  try {
+    const body = file ? new FormData() : undefined;
+    if (file) body.append('avatar', file);
+    const user = await api('/users/me/avatar', body, true, file ? 'POST' : 'DELETE');
+    if (generation !== authGeneration) return;
+    fillProfile(user);
+    showMessage('#profile-message', file ? 'Đã lưu ảnh đại diện.' : 'Đã xóa ảnh đại diện.', true);
+  } catch (error) { if (generation === authGeneration) profileError(error); }
+  finally {
+    avatarSaving = false;
+    $('#choose-avatar').disabled = $('#remove-avatar').disabled = false;
+    $('#avatar-input').value = '';
+  }
+}
+$('#avatar-input').addEventListener('change', () => { const file = $('#avatar-input').files[0]; if (file) updateAvatar(file); });
+$('#remove-avatar').addEventListener('click', () => updateAvatar(null));
+
+document.querySelectorAll('[data-profile-panel]').forEach(button => button.addEventListener('click', () => {
+  const panel = $(`#${button.dataset.profilePanel}-panel`);
+  panel.hidden = !panel.hidden;
+  button.setAttribute('aria-expanded', String(!panel.hidden));
+  if (!panel.hidden) {
+    if (button.dataset.profilePanel === 'point-history') { historyPage = 1; loadPointHistory(); }
+    else loadWallet();
+  }
+}));
+function activityRow(title, subtitle, value, className = '') {
+  const item = document.createElement('li');
+  const content = document.createElement('div');
+  const heading = document.createElement('strong'); heading.textContent = title;
+  const note = document.createElement('small'); note.textContent = subtitle;
+  content.append(heading, note);
+  const amount = document.createElement('span'); amount.textContent = value; amount.className = className;
+  item.append(content, amount);
+  return item;
+}
+async function loadPointHistory() {
+  const generation = authGeneration;
+  const requestId = ++historyRequest;
+  $('#history-prev').disabled = $('#history-next').disabled = true;
+  $('#point-history-list').replaceChildren();
+  $('#history-page').textContent = '';
+  showMessage('#point-history-message', 'Đang tải lịch sử…', true);
+  try {
+    const data = await api(`/users/me/points/history?page=${historyPage}&limit=10&type=${$('#point-history-filter').value}`);
+    if (generation !== authGeneration || requestId !== historyRequest) return;
+    for (const item of data.items) {
+      const earned = item.type === 'earned';
+      $('#point-history-list').append(activityRow(
+        `${earned ? 'Tích điểm' : 'Đổi quà'} · ${item.title || 'Hoạt động xanh'}`,
+        formatDate(item.occurredAt), `${earned ? '+' : ''}${formatPoints(item.points)} điểm`, earned ? 'points-earned' : 'points-redeemed'
+      ));
+    }
+    showMessage('#point-history-message', data.items.length ? '' : 'Bạn chưa có giao dịch điểm trong mục này.', true);
+    $('#history-page').textContent = data.pagination.totalCount ? `${historyPage} / ${data.pagination.totalPages}` : '0 giao dịch';
+    historyHasNext = data.pagination.hasNextPage;
+    $('#history-prev').disabled = !data.pagination.hasPrevPage;
+    $('#history-next').disabled = !historyHasNext;
+  } catch (error) { if (generation === authGeneration && requestId === historyRequest) profileError(error, '#point-history-message'); }
+}
+$('#point-history-filter').addEventListener('change', () => { historyPage = 1; loadPointHistory(); });
+$('#history-prev').addEventListener('click', () => { if (historyPage > 1) { historyPage--; loadPointHistory(); } });
+$('#history-next').addEventListener('click', () => { if (historyHasNext) { historyPage++; loadPointHistory(); } });
+async function loadWallet() {
+  const generation = authGeneration;
+  const requestId = ++walletRequest;
+  $('#wallet-list').replaceChildren();
+  showMessage('#wallet-message', 'Đang tải quà đã đổi…', true);
+  try {
+    const data = await api('/vouchers/wallet');
+    if (generation !== authGeneration || requestId !== walletRequest) return;
+    const statusNames = { active: 'Có thể dùng', used: 'Đã sử dụng', expired: 'Đã hết hạn' };
+    for (const item of data.items) {
+      const row = activityRow(item.voucherName, `${formatPoints(item.pointsUsed)} điểm · ${formatDate(item.redeemedAt)}`, statusNames[item.status]);
+      const code = document.createElement('small'); code.className = 'voucher-code'; code.textContent = `Mã: ${item.voucherCode}`;
+      const expiry = document.createElement('small'); expiry.textContent = item.expiresAt ? `Hết hạn: ${formatDate(item.expiresAt)}` : 'Không giới hạn ngày sử dụng';
+      row.firstElementChild.append(code, expiry);
+      $('#wallet-list').append(row);
+    }
+    showMessage('#wallet-message', data.items.length ? '' : 'Bạn chưa đổi phần quà nào.', true);
+  } catch (error) { if (generation === authGeneration && requestId === walletRequest) profileError(error, '#wallet-message'); }
+}

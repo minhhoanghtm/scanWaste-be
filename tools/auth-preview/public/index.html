@@ -127,11 +127,48 @@
     </section>
 
     <section id="profile-screen" class="screen profile-screen" aria-labelledby="profile-heading" hidden>
-      <div class="profile-brand"><svg><use href="#i-leaf"/></svg> EcoSort AI</div><h1 id="profile-heading">Hồ sơ tài khoản</h1><p class="profile-intro" id="profile-intro">Thông tin và phương thức đăng nhập của bạn.</p>
-      <div class="profile-card"><div class="avatar" id="profile-avatar">E</div><h2 id="profile-name"></h2><p id="profile-email"></p><span class="role-badge" id="profile-role"></span><dl><div><dt>Số điện thoại</dt><dd id="profile-phone"></dd></div><div><dt>Ngày tham gia</dt><dd id="profile-created"></dd></div><div><dt>Email</dt><dd id="profile-email-status"></dd></div><div><dt>Phiên đăng nhập</dt><dd id="profile-session"></dd></div></dl></div>
-      <button id="profile-verify" class="text-button resend-button" type="button" hidden>Xác minh email của bạn</button>
+      <header class="profile-hero">
+        <div class="profile-brand"><svg><use href="#i-leaf"/></svg> EcoSort AI</div>
+        <h1 id="profile-heading">Cá nhân</h1>
+        <div class="avatar profile-photo" id="profile-avatar" aria-label="Ảnh đại diện">E</div>
+        <div class="avatar-actions"><button type="button" id="choose-avatar" class="text-button">Đổi ảnh</button><button type="button" id="remove-avatar" class="text-button" hidden>Xóa ảnh</button></div>
+        <input type="file" id="avatar-input" accept="image/jpeg,image/png,image/webp" aria-label="Chọn ảnh đại diện" hidden>
+        <div class="profile-name-row"><h2 id="profile-name"></h2><button type="button" id="edit-profile" class="edit-profile-button">Đổi tên / Sửa</button></div>
+        <p class="profile-intro" id="profile-intro">Thành viên xanh</p><span class="role-badge" id="profile-role"></span>
+      </header>
+      <section class="points-card" aria-labelledby="points-heading" aria-live="polite">
+        <h2 id="points-heading">ĐIỂM CÓ THỂ ĐỔI</h2>
+        <div class="points-value"><strong id="profile-available-points">—</strong><span>điểm</span><svg><use href="#i-leaf"/></svg></div>
+        <p>Sẵn sàng cho những phần quà xanh</p>
+        <dl class="points-breakdown"><div><dt>Tổng đã tích</dt><dd id="profile-total-points">—</dd></div><div><dt>Đã dùng đổi quà</dt><dd id="profile-spent-points">—</dd></div></dl>
+      </section>
+      <div class="form-message" id="profile-message" role="alert" hidden></div>
+      <form id="profile-edit-form" class="form-card profile-edit-form" hidden>
+        <h2>Chỉnh sửa hồ sơ</h2>
+        <div class="field"><label for="edit-name">Họ và tên</label><div class="input-wrap"><input id="edit-name" name="name" autocomplete="name" maxlength="100" required></div></div>
+        <div class="field"><label for="edit-email">Email</label><div class="input-wrap"><input id="edit-email" name="email" type="email" autocomplete="email" maxlength="254" required></div><p class="recovery-hint">Đổi email sẽ cần xác minh lại địa chỉ mới.</p></div>
+        <div class="field"><label for="edit-phone">Số điện thoại</label><div class="input-wrap"><input id="edit-phone" name="phone" type="tel" autocomplete="tel" placeholder="Chưa cập nhật"></div></div>
+        <div class="form-message" id="edit-profile-message" role="alert" hidden></div>
+        <div class="profile-edit-actions"><button type="button" id="cancel-edit" class="secondary-button">Hủy</button><button type="submit" id="save-profile" class="primary-button"><span>Lưu thay đổi</span></button></div>
+      </form>
+      <div class="profile-menu">
+        <button type="button" class="profile-menu-item" data-profile-panel="point-history" aria-expanded="false" aria-controls="point-history-panel"><span class="menu-icon">↗</span><span><strong>Lịch sử tích / đổi điểm</strong><small>Theo dõi từng lần tích và dùng điểm</small></span><span class="menu-chevron">›</span></button>
+        <section id="point-history-panel" class="profile-panel" aria-labelledby="point-history-heading" hidden>
+          <h2 id="point-history-heading">Lịch sử điểm</h2>
+          <label for="point-history-filter">Loại giao dịch</label><select id="point-history-filter"><option value="all">Tất cả</option><option value="earned">Tích điểm</option><option value="redeemed">Đổi điểm</option></select>
+          <div id="point-history-message" class="form-message" role="status" hidden></div><ul id="point-history-list" class="activity-list"></ul>
+          <div class="history-pagination"><button type="button" id="history-prev" class="secondary-button">Trước</button><span id="history-page"></span><button type="button" id="history-next" class="secondary-button">Sau</button></div>
+        </section>
+        <button type="button" class="profile-menu-item" data-profile-panel="wallet" aria-expanded="false" aria-controls="wallet-panel"><span class="menu-icon gift-menu-icon"><svg><use href="#i-gift"/></svg></span><span><strong>Quà đã đổi</strong><small>Voucher và trạng thái sử dụng</small></span><span class="menu-chevron">›</span></button>
+        <section id="wallet-panel" class="profile-panel" aria-labelledby="wallet-heading" hidden><h2 id="wallet-heading">Quà đã đổi của bạn</h2><div id="wallet-message" class="form-message" role="status" hidden></div><ul id="wallet-list" class="activity-list"></ul></section>
+      </div>
+      <section class="profile-card account-details" aria-labelledby="account-details-heading">
+        <h2 id="account-details-heading">Thông tin cá nhân</h2>
+        <dl><div><dt>Email</dt><dd id="profile-email"></dd></div><div><dt>Số điện thoại</dt><dd id="profile-phone"></dd></div><div><dt>Ngày tham gia</dt><dd id="profile-created"></dd></div><div><dt>Xác minh email</dt><dd id="profile-email-status"></dd></div><div><dt>Phiên đăng nhập</dt><dd id="profile-session"></dd></div></dl>
+        <button id="profile-verify" class="text-button resend-button" type="button" hidden>Xác minh email của bạn</button>
+      </section>
       <div class="account-linking"><h2>Liên kết đăng nhập</h2><p>Dùng Google có cùng email với tài khoản này.</p><div class="social-row"><button class="social-button" type="button" data-social="google"><span class="google-mark">G</span> Google</button></div></div>
-      <button type="button" id="refresh-profile" class="primary-button"><svg><use href="#i-user"/></svg>Lấy lại hồ sơ</button><div class="form-message" id="profile-message" role="alert" hidden></div><button type="button" id="logout" class="logout-button"><svg><use href="#i-logout"/></svg>Đăng xuất trên trình duyệt này</button><button type="button" id="logout-all" class="logout-button">Đăng xuất trên tất cả thiết bị</button><p class="local-session-note">Bản test giữ token trong bộ nhớ của trang. Tải lại trang sẽ cần đăng nhập lại.</p>
+      <button type="button" id="refresh-profile" class="primary-button"><svg><use href="#i-user"/></svg>Cập nhật hồ sơ</button><button type="button" id="logout" class="logout-button"><svg><use href="#i-logout"/></svg>Đăng xuất trên trình duyệt này</button><button type="button" id="logout-all" class="logout-button">Đăng xuất trên tất cả thiết bị</button>
     </section>
     <nav id="member-nav" class="member-nav" aria-label="Điều hướng tài khoản" hidden>
       <button type="button" data-screen="home"><svg><use href="#i-home"/></svg><span>Trang chủ</span></button>
