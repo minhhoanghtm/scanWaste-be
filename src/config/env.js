@@ -1,5 +1,13 @@
 const dotenv = require('dotenv');
 const path = require('path');
+const dns = require('dns');
+
+// Fix DNS SRV ECONNREFUSED on Windows / router DNS for MongoDB Atlas
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {
+  // Ignore if environment forbids custom DNS servers
+}
 
 // Load environment variables from .env file
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });

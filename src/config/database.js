@@ -1,8 +1,18 @@
 const mongoose = require('mongoose');
+const dns = require('dns');
 const env = require('./env');
 
 const connectDB = async () => {
   try {
+    // Khắc phục lỗi ECONNREFUSED khi query DNS SRV MongoDB Atlas trên router / Windows DNS
+    if (env.MONGODB_URI && env.MONGODB_URI.startsWith('mongodb+srv://')) {
+      try {
+        dns.setServers(['8.8.8.8', '1.1.1.1']);
+      } catch (dnsErr) {
+        // Bỏ qua nếu môi trường không cho phép thay đổi DNS servers
+      }
+    }
+
     const conn = await mongoose.connect(env.MONGODB_URI);
 
     console.log(`[Database] MongoDB Connected: ${conn.connection.host}/${conn.connection.name}`);
