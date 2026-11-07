@@ -45,6 +45,12 @@ const userSchema = new mongoose.Schema(
       default: 0,
       min: [0, 'Total points cannot be negative'],
     },
+    // UC008: Prevent concurrent reward redemptions
+redemptionVersion: {
+  type: Number,
+  default: 0,
+  select: false,
+},
     currentStreak: {
       type: Number,
       default: 0,
