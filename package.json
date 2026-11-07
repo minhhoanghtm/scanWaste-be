@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "test:unit": "node tests/unit/ai.test.js && node tests/unit/auth.test.js && node --test tests/unit/auth-mail.test.js && node --test tests/unit/stations.test.js",
+    "test:unit": "node tests/unit/ai.test.js && node tests/unit/auth.test.js && node --test tests/unit/auth-mail.test.js && node --test tests/unit/stations.test.js && node --test tests/unit/auth-preview.test.js",
     "test:integration": "node tests/integration/api.test.js",
     "test:auth": "node --test tests/integration/auth.test.js",
     "test:social": "node --test tests/integration/social.test.js",
