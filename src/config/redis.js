@@ -8,7 +8,7 @@ const unavailable = () => Object.assign(new Error('Authentication storage unavai
 async function getRedis() {
   if (!client) {
     client = createClient({ url: env.REDIS_URL, disableOfflineQueue: true,
-      socket: { connectTimeout: 2000, reconnectStrategy: false } });
+      socket: { connectTimeout: 10000, reconnectStrategy: (retries) => retries >= 3 ? false : Math.min(500 * (retries + 1), 2000) } });
     // Never log Redis URLs, commands or credentials.
     client.on('error', () => {});
   }
