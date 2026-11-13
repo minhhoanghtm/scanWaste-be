@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#007655">
+  <title>EcoSort AI · Đăng nhập</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+  <script src="/dashboard.js" defer></script>
+  <link rel="stylesheet" href="/dashboard.css">
+</head>
+<body>
+  <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M20 4c-9-1-16 2-16 9a7 7 0 0 0 12 5c3-3 3-9 4-14Z"/><path d="M7 20c0-5 3-9 8-12"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M4 21v-3a8 8 0 0 1 16 0v3Z"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 5h4M11 19h2"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6l8-4Z"/><path d="m8 12 3 3 5-6"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-7-7 7 7-7 7"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M20 12H4m7-7-7 7 7 7"/></symbol>
+    <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="5" rx="1"/><path d="M5 13v8h14v-8M12 8v13M12 8C3 8 5 0 9 3l3 5Zm0 0c9 0 7-8 3-5l-3 5Z"/></symbol>
+    <symbol id="i-fingerprint" viewBox="0 0 24 24"><path d="M5 12a7 7 0 0 1 14 0M2 12a10 10 0 0 1 20 0M8 12a4 4 0 0 1 8 0c0 5 1 7 3 9M11 12c0 5-1 8-3 10M5 15c0 3-1 5-2 6M14 16c0 3 1 5 2 6"/></symbol>
+    <symbol id="i-robot" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="3"/><path d="M12 2v4M1 11h3m16 0h3M8 16h8M8 10v2m8-2v2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 3H4v18h6m4-14 5 5-5 5M8 12h12"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V10Z"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 6h4l2-3h4l2 3h4v15H4Z"/><circle cx="12" cy="13" r="4"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1"/><path d="m4 18 6-6 4 4 3-3 4 5"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="7"/><path d="m15 15 7 7"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 5v7l4 3"/></symbol>
+    <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3 5h18v5a2 2 0 0 0 0 4v5H3v-5a2 2 0 0 0 0-4Z"/><path d="m12 8 1 3 3 1-3 1-1 3-1-3-3-1 3-1Z"/></symbol>
+    <symbol id="i-fire" viewBox="0 0 24 24"><path d="M13 2c4 7-2 7 2 11 1-3 2-4 2-4s5 4 4 8a9 9 0 0 1-18-1c0-5 7-9 6-13 2 1 3 3 4 5Z"/></symbol>
+    <symbol id="i-medal" viewBox="0 0 24 24"><circle cx="12" cy="9" r="7"/><path d="m7 15-1 8 6-3 6 3-1-8M12 5l1 3 3 1-3 1-1 3-1-3-3-1 3-1Z"/></symbol>
+    <symbol id="i-recycle" viewBox="0 0 24 24"><path d="m8 5 4-3 5 7m-1-5 1 5-5-1m8 3 2 5-5 5m5-4-5 4-1-5M11 22H5L2 15m4 4-4-4 5-2"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 8a9 9 0 1 0 1 8M20 3v5h-5"/></symbol>
+  </svg>
+
+  <div class="connection" id="connection" role="status"><span class="connection-dot"></span><span id="connection-label">Đang kết nối backend…</span></div>
+
+  <main class="app-shell">
+    <section id="login-screen" class="screen login-screen" aria-labelledby="login-heading">
+      <header class="brand-header">
+        <div class="brand-mark"><svg class="brand-leaf"><use href="#i-leaf"/></svg><span>EcoSort<span class="brand-ai">AI</span></span><i></i></div>
+        <div class="brand-badge"><svg><use href="#i-robot"/></svg> ECOSORT AI V2.4</div>
+        <p class="brand-tagline">Phân loại rác thông minh cùng AI</p>
+      </header>
+
+      <div class="welcome"><h1 id="login-heading">Chào mừng trở lại!</h1><p>Đăng nhập để tiếp tục hành trình sống xanh &amp; tích điểm thưởng.</p></div>
+
+      <form id="login-form" class="form-card" novalidate>
+        <div class="field">
+          <label for="login-identifier">Email hoặc Số điện thoại <span class="verified"><svg><use href="#i-shield"/></svg> AI Verified</span></label>
+          <div class="input-wrap"><span class="at-icon">@</span><input id="login-identifier" name="identifier" placeholder="Nhập email hoặc số điện thoại" autocomplete="username" required aria-describedby="login-identifier-error"></div>
+          <p class="field-error" id="login-identifier-error"></p>
+        </div>
+        <div class="field">
+          <label for="login-password">Mật khẩu tài khoản</label>
+          <div class="input-wrap"><svg><use href="#i-lock"/></svg><input id="login-password" name="password" type="password" placeholder="Hãy nhập mật khẩu" autocomplete="current-password" required aria-describedby="login-password-error"><button class="eye-button" type="button" data-toggle="login-password" aria-label="Hiện mật khẩu" aria-pressed="false"><svg><use href="#i-eye"/></svg></button></div>
+          <p class="field-error" id="login-password-error"></p>
+        </div>
+        <div class="login-options"><label class="checkbox-label"><input id="remember" type="checkbox" checked> Ghi nhớ email/SĐT</label><button class="text-button" id="open-forgot" type="button">Quên mật khẩu?</button></div>
+        <div id="login-message" class="form-message" role="alert" hidden></div>
+        <button class="primary-button" id="login-submit" type="submit"><svg><use href="#i-leaf"/></svg><span>Đăng nhập</span></button>
+        <button class="biometric-button" type="button" disabled title="Sinh trắc học sẽ được tích hợp trên ứng dụng mobile"><svg><use href="#i-fingerprint"/></svg><span>Đăng nhập nhanh với Face ID / Touch ID</span></button>
+        <p class="unavailable-caption">Sinh trắc học chưa khả dụng trong bản web test</p>
+      </form>
+
+      <div class="divider"><span>Hoặc tiếp tục với</span></div>
+      <div class="social-row"><button class="social-button" type="button" disabled title="Google chưa tích hợp"><span class="google-mark">G</span> Google</button></div>
+      <div class="eco-banner"><div class="eco-icon"><svg><use href="#i-leaf"/></svg></div><div><strong>CỘNG ĐỒNG ECOSORT</strong><p>Mỗi hành động nhỏ, một thay đổi xanh.</p></div><span class="trend">↗</span></div>
+      <p class="switch-prompt">Chưa có tài khoản? <button class="text-button switch-link" type="button" data-screen="register">Đăng ký ngay <svg><use href="#i-arrow"/></svg></button></p>
+      <footer class="security-note"><strong><svg><use href="#i-shield"/></svg> BẢO MẬT TRÊN HÀNH TRÌNH XANH</strong><p>Mật khẩu được băm an toàn. Cùng EcoSort AI<br> xây dựng thói quen sống xanh mỗi ngày.</p></footer>
+    </section>
+
+    <section id="register-screen" class="screen register-screen" aria-labelledby="register-heading" hidden>
+      <div class="register-top"><button class="back-button" type="button" data-screen="login" aria-label="Quay lại đăng nhập"><svg><use href="#i-back"/></svg></button><span class="journey-badge"><svg><use href="#i-leaf"/></svg> HÀNH TRÌNH XANH</span></div>
+      <header class="register-header"><div class="brand-mark small"><svg class="brand-leaf"><use href="#i-leaf"/></svg><span>EcoSort<span class="brand-ai">AI</span></span><span class="points-mini">✦ +50</span></div><h1 id="register-heading">Tạo tài khoản mới</h1><div class="reward-badge"><svg><use href="#i-gift"/></svg> Nhận ngay <strong>+50 Điểm Eco</strong> khởi đầu</div><p class="reward-disclaimer">Điểm thưởng chưa áp dụng trong bản test</p></header>
+
+      <form id="register-form" class="form-card register-card" novalidate>
+        <div class="field"><label for="register-name"><svg><use href="#i-user"/></svg> Họ và tên</label><div class="input-wrap no-leading"><input id="register-name" name="name" placeholder="Nhập tên của bạn" autocomplete="name" maxlength="100" required aria-describedby="register-name-error"></div><p class="field-error" id="register-name-error"></p></div>
+        <div class="field"><label for="register-email"><svg><use href="#i-mail"/></svg> Địa chỉ Email</label><div class="input-wrap no-leading"><input id="register-email" name="email" type="email" placeholder="Nhập email" autocomplete="email" required aria-describedby="register-email-error"></div><p class="field-error" id="register-email-error"></p></div>
+        <div class="field"><label for="register-phone"><svg><use href="#i-phone"/></svg> Số điện thoại di động</label><div class="phone-row"><span class="country-code">+84</span><div class="input-wrap no-leading"><input id="register-phone" name="phone" type="tel" placeholder="Nhập số điện thoại" autocomplete="tel-national" required aria-describedby="register-phone-error"></div></div><p class="field-error" id="register-phone-error"></p></div>
+        <div class="field"><label for="register-password"><svg><use href="#i-lock"/></svg> Mật khẩu</label><div class="input-wrap no-leading"><input id="register-password" name="password" type="password" placeholder="Hãy nhập mật khẩu" autocomplete="new-password" required aria-describedby="register-password-error strength-label"><button class="eye-button" type="button" data-toggle="register-password" aria-label="Hiện mật khẩu" aria-pressed="false"><svg><use href="#i-eye"/></svg></button></div><p class="field-error" id="register-password-error"></p><div class="strength-meta"><span>Độ an toàn mật khẩu</span><strong id="strength-label">Chưa nhập</strong></div><div class="strength-bars" id="strength-bars"><i></i><i></i><i></i><i></i></div></div>
+        <div class="field"><label for="register-confirm"><svg><use href="#i-shield"/></svg> Xác nhận mật khẩu</label><div class="input-wrap no-leading"><input id="register-confirm" name="confirmPassword" type="password" placeholder="Nhập lại mật khẩu" autocomplete="new-password" required aria-describedby="register-confirm-error"></div><p class="field-error" id="register-confirm-error"></p></div>
+        <div class="referral-box"><div class="referral-heading"><label for="referral"><svg><use href="#i-gift"/></svg> Mã giới thiệu bạn bè</label><span>+20 điểm</span></div><div class="referral-input"><input id="referral" placeholder="VD: ECOFRIEND20" disabled><button type="button" disabled>Áp dụng</button></div><p>Mã giới thiệu chưa tích hợp trong bản test</p></div>
+        <label class="terms checkbox-label"><input id="terms" type="checkbox"><span>Tôi đồng ý với <button type="button" class="text-button" data-notice="Điều khoản dịch vụ sẽ được bổ sung trong bản chính thức.">Điều khoản dịch vụ</button> &amp; <button type="button" class="text-button" data-notice="Chính sách quyền riêng tư sẽ được bổ sung trong bản chính thức.">Chính sách quyền riêng tư</button> của EcoSort AI.</span></label>
+        <div id="register-message" class="form-message" role="alert" hidden></div>
+        <button class="primary-button register-submit" id="register-submit" type="submit" disabled><svg><use href="#i-leaf"/></svg><span>Tạo tài khoản &amp; Bắt đầu</span></button>
+      </form>
+      <div class="divider"><span>HOẶC TIẾP TỤC NHANH VỚI</span></div><div class="social-row"><button class="social-button" type="button" disabled title="Google chưa tích hợp"><span class="google-mark">G</span> Google</button></div>
+      <p class="switch-prompt">Đã có tài khoản? <button class="text-button" type="button" data-screen="login">Đăng nhập ngay</button></p>
+    </section>
+
+    <section id="verify-screen" class="screen recovery-screen" aria-labelledby="verify-heading" hidden>
+      <div class="register-top"><button class="back-button" id="verify-back" type="button" aria-label="Về đăng nhập"><svg><use href="#i-back"/></svg></button><span class="journey-badge"><svg><use href="#i-shield"/></svg> BẢO VỆ TÀI KHOẢN</span></div>
+      <header class="recovery-header"><div class="recovery-icon"><svg><use href="#i-mail"/></svg></div><h1 id="verify-heading">Xác minh email</h1><p>Nhập mã gồm 6 số được gửi đến<br><strong id="verify-email"></strong></p></header>
+      <form id="verify-form" class="form-card" novalidate>
+        <div class="field"><label for="verify-otp">Mã xác minh</label><div class="input-wrap no-leading"><input id="verify-otp" class="otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="Nhập mã 6 số" maxlength="6" pattern="[0-9]{6}" required></div><p class="recovery-hint">Mã có hiệu lực trong 5 phút và chỉ dùng một lần.</p></div>
+        <div class="form-message" id="verify-message" role="alert" hidden></div>
+        <button id="verify-submit" class="primary-button" type="submit"><span>Xác minh &amp; tiếp tục</span></button>
+        <button id="verify-resend" class="text-button resend-button" type="button">Gửi mã xác minh</button>
+      </form>
+    </section>
+
+    <section id="forgot-screen" class="screen recovery-screen" aria-labelledby="forgot-heading" hidden>
+      <div class="register-top"><button class="back-button" type="button" data-screen="login" aria-label="Về đăng nhập"><svg><use href="#i-back"/></svg></button><span class="journey-badge"><svg><use href="#i-leaf"/></svg> ECOSORT AI</span></div>
+      <header class="recovery-header"><div class="recovery-icon"><svg><use href="#i-lock"/></svg></div><h1 id="forgot-heading">Quên mật khẩu?</h1><p>Nhập email của bạn để nhận mã đặt lại mật khẩu.</p></header>
+      <form id="forgot-form" class="form-card" novalidate>
+        <div class="field"><label for="forgot-email">Địa chỉ email</label><div class="input-wrap"><svg><use href="#i-mail"/></svg><input id="forgot-email" type="email" autocomplete="email" placeholder="Nhập email" required></div></div>
+        <div class="form-message" id="forgot-message" role="alert" hidden></div>
+        <button id="forgot-submit" class="primary-button" type="submit"><span>Gửi mã xác nhận</span></button>
+      </form>
+      <p class="switch-prompt"><button class="text-button" type="button" data-screen="login">Quay lại đăng nhập</button></p>
+    </section>
+
+    <section id="reset-screen" class="screen recovery-screen" aria-labelledby="reset-heading" hidden>
+      <div class="register-top"><button class="back-button" type="button" data-screen="forgot" aria-label="Đổi địa chỉ email"><svg><use href="#i-back"/></svg></button><span class="journey-badge"><svg><use href="#i-shield"/></svg> BẢO VỆ TÀI KHOẢN</span></div>
+      <header class="recovery-header"><div class="recovery-icon"><svg><use href="#i-lock"/></svg></div><h1 id="reset-heading">Đặt lại mật khẩu</h1><p>Nếu email đã được đăng ký bằng mật khẩu, mã xác nhận sẽ được gửi đến<br><strong id="reset-email"></strong></p></header>
+      <form id="reset-form" class="form-card" novalidate>
+        <div class="field"><label for="reset-otp">Mã xác nhận</label><div class="input-wrap no-leading"><input id="reset-otp" class="otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="Nhập mã 6 số" maxlength="6" required></div></div>
+        <div class="field"><label for="reset-password">Mật khẩu mới</label><div class="input-wrap"><svg><use href="#i-lock"/></svg><input id="reset-password" type="password" autocomplete="new-password" placeholder="Hãy nhập mật khẩu" required><button class="eye-button" type="button" data-toggle="reset-password" aria-label="Hiện mật khẩu" aria-pressed="false"><svg><use href="#i-eye"/></svg></button></div><p class="recovery-hint">Sử dụng ít nhất 8 ký tự.</p></div>
+        <div class="field"><label for="reset-confirm">Xác nhận mật khẩu mới</label><div class="input-wrap no-leading"><input id="reset-confirm" type="password" autocomplete="new-password" placeholder="Nhập lại mật khẩu" required></div></div>
+        <div class="form-message" id="reset-message" role="alert" hidden></div>
+        <button id="reset-submit" class="primary-button" type="submit"><span>Lưu mật khẩu mới</span></button>
+        <button id="reset-resend" class="text-button resend-button" type="button">Gửi lại mã</button>
+      </form>
+    </section>
+
+    <section id="home-screen" class="screen dashboard" aria-labelledby="home-heading" hidden>
+      <header class="dashboard-header"><div><div class="dashboard-brand"><svg><use href="#i-leaf"/></svg>EcoSort AI</div><p>Chào <span id="home-name"></span>, cùng sống xanh!</p><h1 id="home-heading">Trang chủ</h1></div><button type="button" class="home-avatar" id="home-avatar" data-screen="profile" aria-label="Mở hồ sơ tài khoản">E</button></header>
+      <p id="home-auth-message" hidden></p><div id="home-message" class="form-message" role="alert" hidden></div>
+      <section class="dashboard-balance" aria-label="Điểm tài khoản"><div class="balance-top"><div><h2>ĐIỂM CÓ THỂ ĐỔI</h2><div class="balance-value"><svg><use href="#i-leaf"/></svg><strong id="home-balance">—</strong><span>điểm</span></div></div><button type="button" class="gift-button" data-screen="rewards"><svg><use href="#i-gift"/></svg>Đổi quà</button></div><div class="balance-bottom"><span>Đã tích <strong id="home-earned">—</strong></span><span>Đã dùng <strong id="home-spent">—</strong></span></div></section>
+      <section class="scan-hero"><div class="scan-hero-copy"><h2>Phân loại rác bằng AI</h2><p>Chụp ảnh để biết cách phân loại</p><div class="scan-actions"><button type="button" data-open-scan="camera"><svg><use href="#i-camera"/></svg>Quét rác ngay</button><button type="button" data-open-scan="library"><svg><use href="#i-image"/></svg>Chọn ảnh</button></div></div><img class="scan-art" src="/recycle-art.svg" alt="Chai nhựa, giấy và thùng tái chế" width="170" height="180"></section>
+      <section><h2 class="dashboard-section-title">Khám phá</h2><div class="discovery-grid"><button type="button" data-screen="lookup"><span class="discovery-icon"><svg><use href="#i-search"/></svg></span><strong>Tra cứu rác</strong><span>›</span></button><button type="button" data-screen="stations"><span class="discovery-icon"><svg><use href="#i-pin"/></svg></span><strong>Điểm thu gom</strong><span>›</span></button><button type="button" data-screen="history"><span class="discovery-icon"><svg><use href="#i-clock"/></svg></span><strong>Lịch sử quét</strong><span>›</span></button><button type="button" data-screen="wallet"><span class="discovery-icon"><svg><use href="#i-ticket"/></svg></span><strong>Ví voucher</strong><span>›</span></button></div></section>
+      <section><div class="dashboard-section-heading"><h2>Hành trình xanh</h2><button type="button" class="text-button" data-screen="statistics">Xem thống kê ›</button></div><div class="journey-grid"><button type="button" data-screen="statistics"><svg><use href="#i-recycle"/></svg><span><strong id="home-scans">—</strong><small>Lượt phân loại</small></span></button><button type="button" data-screen="statistics"><svg><use href="#i-fire"/></svg><span><strong id="home-streak">—</strong><small>Chuỗi hoạt động</small></span></button><button type="button" data-screen="profile"><svg><use href="#i-medal"/></svg><span><strong id="home-badges">—</strong><small>Huy hiệu</small></span></button></div><p id="home-progress-label" class="journey-progress-label">Phân loại rác để nhận huy hiệu đầu tiên</p><progress id="home-progress" value="0" max="100" aria-label="Tiến độ huy hiệu"></progress></section>
+      <section><div class="dashboard-section-heading"><h2>Hoạt động gần đây</h2><button type="button" class="text-button" data-screen="activity">Xem tất cả ›</button></div><ul id="home-activity" class="dashboard-activity" aria-live="polite"></ul><div id="home-activity-message" class="form-message" role="status" hidden></div></section>
+      <button type="button" class="profile-callout" data-screen="profile"><svg><use href="#i-medal"/></svg><span><strong>Thông tin &amp; thành tích của bạn</strong><small>Mở hồ sơ ›</small></span><svg><use href="#i-leaf"/></svg></button>
+      <button type="button" id="home-refresh" class="dashboard-refresh"><svg><use href="#i-refresh"/></svg>Cập nhật dữ liệu</button>
+    </section>
+    <section id="lookup-screen" class="screen feature-screen" aria-labelledby="lookup-heading" hidden><header class="feature-header"><button type="button" data-screen="home" aria-label="Về Trang chủ">‹</button><div><span>ECOSORT AI</span><h1 id="lookup-heading">Tra cứu rác</h1></div></header><p class="feature-description">Tìm hiểu cách phân loại và xử lý rác đúng cách.</p><label for="waste-search" class="feature-label">Bạn muốn tra cứu loại rác nào?</label><input id="waste-search" class="feature-input" type="search" placeholder="Tìm nhựa, giấy, thủy tinh…"><div id="lookup-message" class="form-message" role="status" hidden></div><div id="waste-guide-list" class="feature-list"></div></section>
+    <section id="scan-screen" class="screen feature-screen" aria-labelledby="scan-heading" hidden><header class="feature-header"><button type="button" data-screen="home" aria-label="Về Trang chủ">‹</button><div><span>ECOSORT AI</span><h1 id="scan-heading">Quét rác bằng AI</h1></div></header><p class="feature-description">Chụp hoặc chọn ảnh rõ nét, chỉ chứa loại rác cần phân loại.</p><div class="scan-picker"><svg><use href="#i-camera"/></svg><p>Chọn một ảnh để bắt đầu</p><div class="scan-picker-actions"><button type="button" id="capture-image" class="primary-button">Chụp ảnh</button><button type="button" id="select-image" class="secondary-button">Chọn ảnh</button></div><input id="scan-camera-input" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" hidden><input id="scan-library-input" type="file" accept="image/jpeg,image/png,image/webp" hidden><img id="scan-preview" alt="Ảnh rác bạn đã chọn" hidden><button type="button" id="scan-submit" class="primary-button" hidden>Phân loại ngay</button></div><div id="scan-message" class="form-message" role="status" hidden></div><div id="scan-result" class="feature-list" hidden></div></section>
+    <section id="history-screen" class="screen feature-screen" aria-labelledby="history-heading" hidden><header class="feature-header"><button type="button" data-screen="home" aria-label="Về Trang chủ">‹</button><div><span>ECOSORT AI</span><h1 id="history-heading">Lịch sử quét</h1></div></header><label for="history-category" class="feature-label">Lọc theo loại rác</label><select id="history-category" class="feature-input"><option value="">Tất cả loại rác</option></select><div id="history-message" class="form-message" role="status" hidden></div><div id="scan-history-list" class="feature-list"></div><div class="history-pagination"><button id="scans-prev" type="button" class="secondary-button">Trước</button><span id="scans-page"></span><button id="scans-next" type="button" class="secondary-button">Sau</button></div></section>
+    <section id="detail-screen" class="screen feature-screen" aria-labelledby="detail-heading" hidden><header class="feature-header"><button type="button" data-screen="history" aria-label="Về lịch sử">‹</button><div><span>ECOSORT AI</span><h1 id="detail-heading">Chi tiết phân loại</h1></div></header><div id="detail-message" class="form-message" role="status" hidden></div><div id="classification-detail" class="feature-list"></div><form id="feedback-form" class="feature-card" hidden><h2>Báo kết quả chưa đúng</h2><label for="feedback-category" class="feature-label">Loại rác chính xác</label><select id="feedback-category" class="feature-input"></select><label for="feedback-comment" class="feature-label">Ghi chú</label><textarea id="feedback-comment" class="feature-input" maxlength="1000" placeholder="Mô tả để nhóm kiểm tra"></textarea><label class="checkbox-label"><input type="checkbox" id="feedback-consent"><span>Tôi đồng ý dùng ảnh này để cải thiện AI.</span></label><button type="submit" id="send-feedback" class="primary-button">Gửi phản hồi</button><div id="feedback-message" class="form-message" role="status" hidden></div></form></section>
+    <section id="activity-screen" class="screen feature-screen" aria-labelledby="activity-heading" hidden><header class="feature-header"><button type="button" data-screen="home" aria-label="Về Trang chủ">‹</button><div><span>ECOSORT AI</span><h1 id="activity-heading">Lịch sử điểm</h1></div></header><label class="feature-label" for="activity-type">Loại hoạt động</label><select id="activity-type" class="feature-input"><option value="all">Tất cả</option><option value="earned">Tích điểm</option><option value="redeemed">Đổi điểm</option></select><div id="activity-message" class="form-message" role="status" hidden></div><ul id="all-activity" class="dashboard-activity"></ul><div class="history-pagination"><button id="activity-prev" type="button" class="secondary-button">Trước</button><span id="activity-page"></span><button id="activity-next" type="button" class="secondary-button">Sau</button></div></section>
+    <section id="wallet-screen" class="screen feature-screen" aria-labelledby="wallet-page-heading" hidden><header class="feature-header"><button type="button" data-screen="home" aria-label="Về Trang chủ">‹</button><div><span>ECOSORT AI</span><h1 id="wallet-page-heading">Ví voucher</h1></div></header><label for="wallet-status" class="feature-label">Trạng thái voucher</label><select id="wallet-status" class="feature-input"><option value="all">Tất cả</option><option value="active">Có thể dùng</option><option value="used">Đã sử dụng</option><option value="expired">Đã hết hạn</option></select><div id="voucher-message" class="form-message" role="status" hidden></div><div id="voucher-cards" class="feature-list"></div></section>
+    <section id="statistics-screen" class="screen feature-screen" aria-labelledby="statistics-heading" hidden><header class="feature-header"><button type="button" data-screen="home" aria-label="Về Trang chủ">‹</button><div><span>ECOSORT AI</span><h1 id="statistics-heading">Hành trình xanh</h1></div></header><div id="statistics-message" class="form-message" role="status" hidden></div><div id="personal-statistics" class="feature-list"></div><button type="button" data-screen="profile" class="primary-button">Xem huy hiệu &amp; hồ sơ</button><button type="button" id="open-esg" class="secondary-button" hidden>Ngân sách ESG</button></section>
+    <section id="stations-screen" class="screen feature-screen" aria-labelledby="stations-heading" hidden><header class="feature-header"><button type="button" data-screen="home" aria-label="Về Trang chủ">‹</button><div><span>ECOSORT AI</span><h1 id="stations-heading">Điểm thu gom</h1></div></header><p class="feature-description">Tìm trạm thu gom gần bạn và xem loại rác được tiếp nhận.</p><button type="button" id="locate-stations" class="primary-button">Dùng vị trí hiện tại</button><label for="station-search" class="feature-label">Tìm tên trạm hoặc địa chỉ</label><input type="search" id="station-search" class="feature-input" placeholder="Nhập tên hoặc địa chỉ…"><label for="station-category" class="feature-label">Loại rác cần gửi</label><select id="station-category" class="feature-input"><option value="">Tất cả loại rác</option></select><button type="button" id="filter-stations" class="secondary-button">Tìm điểm thu gom</button><div id="stations-message" class="form-message" role="status" hidden></div><div id="station-cards" class="feature-list"></div><div class="history-pagination"><button id="stations-prev" type="button" class="secondary-button" disabled>Trước</button><span id="stations-page"></span><button id="stations-next" type="button" class="secondary-button" disabled>Sau</button></div></section>
+    <section id="rewards-screen" class="screen feature-screen rewards-screen" aria-labelledby="rewards-heading" hidden><header class="feature-header"><button type="button" data-screen="home" aria-label="Về Trang chủ">‹</button><div><span>ECOSORT AI</span><h1 id="rewards-heading">Quà tặng &amp; ưu đãi</h1></div></header><p class="feature-description rewards-sync-note">Màn đổi quà hiện chưa đồng bộ điểm với tài khoản. Điểm thực của bạn được xem ở Trang chủ và Hồ sơ.</p><div id="rewards-message" class="form-message" role="status" hidden></div><a id="rewards-fullscreen" class="text-button rewards-fullscreen" target="_blank" rel="noopener noreferrer">Mở toàn màn hình ↗</a><iframe id="rewards-frame" title="Cửa hàng và đổi quà của EcoSort AI" referrerpolicy="same-origin"></iframe></section>
+    <section id="profile-screen" class="screen profile-screen" aria-labelledby="profile-heading" hidden>
+      <header class="profile-hero">
+        <div class="profile-brand"><svg><use href="#i-leaf"/></svg> EcoSort AI</div>
+        <h1 id="profile-heading">Cá nhân</h1>
+        <div class="avatar profile-photo" id="profile-avatar" aria-label="Ảnh đại diện">E</div>
+        <div class="avatar-actions"><button type="button" id="choose-avatar" class="text-button">Đổi ảnh</button><button type="button" id="remove-avatar" class="text-button" hidden>Xóa ảnh</button></div>
+        <input type="file" id="avatar-input" accept="image/jpeg,image/png,image/webp" aria-label="Chọn ảnh đại diện" hidden>
+        <div class="profile-name-row"><h2 id="profile-name"></h2><button type="button" id="edit-profile" class="edit-profile-button">Đổi tên / Sửa</button></div>
+        <p class="profile-intro" id="profile-intro">Thành viên xanh</p><span class="role-badge" id="profile-role"></span>
+      </header>
+      <section class="points-card" aria-labelledby="points-heading" aria-live="polite">
+        <h2 id="points-heading">ĐIỂM CÓ THỂ ĐỔI</h2>
+        <div class="points-value"><strong id="profile-available-points">—</strong><span>điểm</span><svg><use href="#i-leaf"/></svg></div>
+        <p>Sẵn sàng cho những phần quà xanh</p>
+        <dl class="points-breakdown"><div><dt>Tổng đã tích</dt><dd id="profile-total-points">—</dd></div><div><dt>Đã dùng đổi quà</dt><dd id="profile-spent-points">—</dd></div></dl>
+      </section>
+      <div class="form-message" id="profile-message" role="alert" hidden></div>
+      <form id="profile-edit-form" class="form-card profile-edit-form" hidden>
+        <h2>Chỉnh sửa hồ sơ</h2>
+        <div class="field"><label for="edit-name">Họ và tên</label><div class="input-wrap"><input id="edit-name" name="name" autocomplete="name" maxlength="100" required></div></div>
+        <div class="field"><label for="edit-email">Email</label><div class="input-wrap"><input id="edit-email" name="email" type="email" autocomplete="email" maxlength="254" required></div><p class="recovery-hint">Đổi email sẽ cần xác minh lại địa chỉ mới.</p></div>
+        <div class="field"><label for="edit-phone">Số điện thoại</label><div class="input-wrap"><input id="edit-phone" name="phone" type="tel" autocomplete="tel" placeholder="Chưa cập nhật"></div></div>
+        <div class="form-message" id="edit-profile-message" role="alert" hidden></div>
+        <div class="profile-edit-actions"><button type="button" id="cancel-edit" class="secondary-button">Hủy</button><button type="submit" id="save-profile" class="primary-button"><span>Lưu thay đổi</span></button></div>
+      </form>
+      <div class="profile-menu">
+        <button type="button" class="profile-menu-item" data-profile-panel="point-history" aria-expanded="false" aria-controls="point-history-panel"><span class="menu-icon">↗</span><span><strong>Lịch sử tích / đổi điểm</strong><small>Theo dõi từng lần tích và dùng điểm</small></span><span class="menu-chevron">›</span></button>
+        <section id="point-history-panel" class="profile-panel" aria-labelledby="point-history-heading" hidden>
+          <h2 id="point-history-heading">Lịch sử điểm</h2>
+          <label for="point-history-filter">Loại giao dịch</label><select id="point-history-filter"><option value="all">Tất cả</option><option value="earned">Tích điểm</option><option value="redeemed">Đổi điểm</option></select>
+          <div id="point-history-message" class="form-message" role="status" hidden></div><ul id="point-history-list" class="activity-list"></ul>
+          <div class="history-pagination"><button type="button" id="history-prev" class="secondary-button">Trước</button><span id="history-page"></span><button type="button" id="history-next" class="secondary-button">Sau</button></div>
+        </section>
+        <button type="button" class="profile-menu-item" data-profile-panel="wallet" aria-expanded="false" aria-controls="wallet-panel"><span class="menu-icon gift-menu-icon"><svg><use href="#i-gift"/></svg></span><span><strong>Quà đã đổi</strong><small>Voucher và trạng thái sử dụng</small></span><span class="menu-chevron">›</span></button>
+        <section id="wallet-panel" class="profile-panel" aria-labelledby="wallet-heading" hidden><h2 id="wallet-heading">Quà đã đổi của bạn</h2><div id="wallet-message" class="form-message" role="status" hidden></div><ul id="wallet-list" class="activity-list"></ul></section>
+      </div>
+      <section class="profile-card account-details" aria-labelledby="account-details-heading">
+        <h2 id="account-details-heading">Thông tin cá nhân</h2>
+        <dl><div><dt>Email</dt><dd id="profile-email"></dd></div><div><dt>Số điện thoại</dt><dd id="profile-phone"></dd></div><div><dt>Ngày tham gia</dt><dd id="profile-created"></dd></div><div><dt>Xác minh email</dt><dd id="profile-email-status"></dd></div><div><dt>Phiên đăng nhập</dt><dd id="profile-session"></dd></div></dl>
+        <button id="profile-verify" class="text-button resend-button" type="button" hidden>Xác minh email của bạn</button>
+      </section>
+      <div class="account-linking"><h2>Liên kết đăng nhập</h2><p>Dùng Google có cùng email với tài khoản này.</p><div class="social-row"><button class="social-button" type="button" data-social="google"><span class="google-mark">G</span> Google</button></div></div>
+      <button type="button" id="refresh-profile" class="primary-button"><svg><use href="#i-user"/></svg>Cập nhật hồ sơ</button><button type="button" id="logout" class="logout-button"><svg><use href="#i-logout"/></svg>Đăng xuất trên trình duyệt này</button><button type="button" id="logout-all" class="logout-button">Đăng xuất trên tất cả thiết bị</button>
+    </section>
+    <nav id="member-nav" class="member-nav dashboard-nav" aria-label="Điều hướng tài khoản" hidden>
+      <button type="button" data-screen="home"><svg><use href="#i-home"/></svg><span>Trang chủ</span></button><button type="button" data-screen="lookup"><svg><use href="#i-search"/></svg><span>Tra cứu</span></button><button type="button" class="nav-scan" data-screen="scan"><svg><use href="#i-camera"/></svg><span>Quét AI</span></button><button type="button" data-screen="rewards"><svg><use href="#i-gift"/></svg><span>Quà tặng</span></button><button type="button" data-screen="profile"><svg><use href="#i-user"/></svg><span>Cá nhân</span></button>
+    </nav>
+  </main>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <dialog id="social-setup" class="setup-dialog"><button type="button" id="close-setup" aria-label="Đóng hướng dẫn">×</button><svg><use href="#i-shield"/></svg><h2 id="social-setup-title">Thiết lập đăng nhập thật</h2><p id="social-setup-description"></p><p>Ứng dụng chưa được cấp cấu hình xác thực. Không có tài khoản hoặc phiên đăng nhập giả nào được tạo khi bấm nút này.</p><a id="social-setup-link" target="_blank" rel="noopener noreferrer">Mở trang thiết lập chính thức ↗</a></dialog>
+</body>
+</html>

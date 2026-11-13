@@ -1,0 +1,31 @@
+{
+  "model": "scanwaste_mobilenetv2_v3",
+  "format": "tflite",
+  "input_shape": [
+    1,
+    224,
+    224,
+    3
+  ],
+  "input_dtype": "float32",
+  "input_color": "RGB",
+  "input_range": [
+    0,
+    255
+  ],
+  "normalization": "inside_model",
+  "output_shape": [
+    1,
+    7
+  ],
+  "output_dtype": "float32",
+  "classes": [
+    "organic",
+    "cardboard",
+    "glass",
+    "metal",
+    "paper",
+    "plastic",
+    "other"
+  ]
+}

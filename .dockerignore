@@ -1,0 +1,16 @@
+.git
+node_modules
+.env
+.env.*
+!.env.example
+*.p8
+*.pem
+*.log
+uploads
+local-data
+
+# SMTP test messages and local artifacts must not enter images.
+local-mailbox
+docs/ui-evidence
+__pycache__
+*.pyc

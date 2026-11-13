@@ -4,9 +4,9 @@ const { sendSuccess } = require('../../utils/response');
 class AuthController {
   async register(req, res, next) {
     try {
-      const { name, email, password } = req.body;
-      const result = await authService.register({ name, email, password });
-      return sendSuccess(res, 'User registered successfully', result, 201);
+      const { name, email, phone, password } = req.body;
+      const result = await authService.register({ name, email, phone, password });
+      return sendSuccess(res, 'Check your email to complete registration', result, 202);
     } catch (error) {
       next(error);
     }
@@ -14,9 +14,9 @@ class AuthController {
 
   async login(req, res, next) {
     try {
-      const { email, password } = req.body;
-      const result = await authService.login({ email, password });
-      return sendSuccess(res, 'Login successfully', result, 200);
+      const { identifier, password } = req.body;
+      const result = await authService.login({ identifier, password });
+      return sendSuccess(res, 'Check your email to complete login', result, 202);
     } catch (error) {
       next(error);
     }

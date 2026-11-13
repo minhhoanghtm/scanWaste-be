@@ -1,72 +1,55 @@
 const bcrypt = require('bcryptjs');
 const User = require('../users/user.model');
-const { generateToken } = require('../../utils/jwt');
+const sessions = require('./auth.session');
+const {
+  normalizeLoginIdentifier,
+} = require('./auth.utils');
+
+const createAuthError = (message, statusCode, errorCode) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.errorCode = errorCode;
+  return error;
+};
+
+// Keep the bcrypt work factor identical for missing users and wrong passwords.
+const dummyPasswordHash = bcrypt.hashSync('scanwaste-auth-timing-placeholder', 12);
+
+const serializeUser = (user) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  phone: user.phone,
+  role: user.role,
+  emailVerified: user.emailVerified,
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
+});
 
 class AuthService {
-  async register({ name, email, password }) {
-    const normalizedEmail = email.toLowerCase().trim();
-
-    const existingUser = await User.findOne({ email: normalizedEmail });
-    if (existingUser) {
-      const error = new Error('Email is already registered');
-      error.statusCode = 409;
-      throw error;
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const newUser = await User.create({
-      name: name.trim(),
-      email: normalizedEmail,
-      password: hashedPassword,
-    });
-
-    const token = generateToken({ userId: newUser._id });
-
-    return {
-      user: {
-        id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        createdAt: newUser.createdAt,
-        updatedAt: newUser.updatedAt,
-      },
-      token,
-    };
+  async createSession(user) {
+    return { user: serializeUser(user), ...await sessions.create(user) };
   }
 
-  async login({ email, password }) {
-    const normalizedEmail = email.toLowerCase().trim();
+  async register({ name, email, phone, password }) {
+    return require('./auth.registration').request({ name, email, phone, password });
+  }
 
-    const user = await User.findOne({ email: normalizedEmail }).select('+password');
-    if (!user) {
-      const error = new Error('Invalid email or password');
-      error.statusCode = 401;
-      throw error;
+  async login({ identifier, password }) {
+    const normalizedIdentifier = normalizeLoginIdentifier(identifier);
+    if (!normalizedIdentifier) {
+      throw createAuthError('Invalid email or phone number', 400, 'VALIDATION_ERROR');
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      const error = new Error('Invalid email or password');
-      error.statusCode = 401;
-      throw error;
+    const user = await User.findOne({
+      [normalizedIdentifier.field]: normalizedIdentifier.value,
+    }).select('+password');
+    const isMatch = await bcrypt.compare(password, user?.password || dummyPasswordHash);
+    if (!user || !user.password || !isMatch) {
+      throw createAuthError('Invalid email, phone number, or password', 401, 'INVALID_CREDENTIALS');
     }
 
-    const token = generateToken({ userId: user._id });
-
-    return {
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      },
-      token,
-    };
+    return require('./auth.login-otp').request(user);
   }
 }
 

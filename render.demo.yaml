@@ -1,0 +1,69 @@
+# Free demonstration only. Select this Blueprint file when creating a Render Blueprint.
+# See docs/DEMO_HOSTING.md for required accounts, limits and the two public URLs.
+services:
+  - type: keyvalue
+    name: scanwaste-demo-redis
+    plan: free
+    region: singapore
+    maxmemoryPolicy: noeviction
+    ipAllowList: []
+
+  - type: web
+    name: scanwaste-demo-api
+    runtime: docker
+    dockerfilePath: Dockerfile.paas
+    plan: free
+    region: singapore
+    branch: develop
+    autoDeploy: false
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: OTP_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 15m
+      - key: REDIS_URL
+        fromService:
+          name: scanwaste-demo-redis
+          type: keyvalue
+          property: connectionString
+      - key: REDIS_PREFIX
+        value: "scanwaste-demo:"
+      - key: EMAIL_PROVIDER
+        value: brevo
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_EMAIL
+        sync: false
+      - key: BREVO_SENDER_NAME
+        value: EcoSort AI
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: SOCIAL_PUBLIC_ORIGIN
+        sync: false
+      - key: UPLOAD_DIR
+        value: uploads
+
+  - type: web
+    name: scanwaste-demo-web
+    runtime: node
+    plan: free
+    region: singapore
+    branch: develop
+    autoDeploy: false
+    buildCommand: npm ci --omit=dev
+    startCommand: npm run preview
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.23.2
+      - key: BACKEND_URL
+        sync: false

@@ -10,10 +10,11 @@ const sendSuccess = (res, message = 'Success', data = {}, statusCode = 200) => {
   });
 };
 
-const sendError = (res, message = 'Error', errors = [], statusCode = 500) => {
+const sendError = (res, message = 'Error', errors = [], statusCode = 500, code = null) => {
   return res.status(statusCode).json({
     success: false,
     message,
+    ...(code ? { code } : {}),
     errors: Array.isArray(errors) ? errors : [errors],
   });
 };

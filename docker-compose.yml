@@ -1,18 +1,59 @@
-version: '3.8'
-
 services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    restart: unless-stopped
+    volumes:
+      - redis_auth_data:/data
+    networks:
+      - scanwaste-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   mongodb:
     image: mongo:7.0
     container_name: scanwaste-mongodb
     restart: always
-    ports:
-      - '27017:27017'
+    # Security: No ports exposed to the public Internet in production.
+    # Communication happens solely within the internal scanwaste-network.
     environment:
       - MONGO_INITDB_DATABASE=waste_classification
     volumes:
       - mongodata:/data/db
     networks:
       - scanwaste-network
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'db.runCommand(\"ping\").ok' | mongosh localhost:27017/waste_classification --quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  ai-inference:
+    build:
+      context: .
+      dockerfile: ai_service/Dockerfile
+    container_name: scanwaste-ai-inference
+    restart: always
+    # Security: Internal inference service is NOT exposed to public Internet.
+    # Only backend container accesses port 5005 over scanwaste-network.
+    environment:
+      - AI_SERVICE_PORT=5005
+      - MODEL_VERSION=v3
+    volumes:
+      - ./models:/app/models:ro
+      - uploads_data:/app/uploads:ro
+    networks:
+      - scanwaste-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5005/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   backend:
     build:
@@ -26,18 +67,43 @@ services:
       - PORT=5000
       - NODE_ENV=production
       - MONGODB_URI=mongodb://mongodb:27017/waste_classification
-      - JWT_SECRET=waste_classification_docker_secret_key_2026
-      - JWT_EXPIRES_IN=7d
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in .env}
+      - JWT_EXPIRES_IN=15m
+      - REDIS_URL=redis://redis:6379
+      - REFRESH_TTL_SECONDS=604800
+      - OTP_SECRET=${OTP_SECRET:?Set OTP_SECRET in .env}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-}
       - MAX_FILE_SIZE=5242880
       - UPLOAD_DIR=uploads
+      - AI_SERVICE_URL=http://ai-inference:5005
+      - AI_PROVIDER=fastapi_tflite
+      - INFERENCE_TIMEOUT_MS=5000
     volumes:
       - uploads_data:/app/uploads
+      - ./models:/app/models:ro
     depends_on:
-      - mongodb
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      ai-inference:
+        condition: service_healthy
     networks:
       - scanwaste-network
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:5000/api/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
 volumes:
+  redis_auth_data:
   mongodata:
   uploads_data:
 
