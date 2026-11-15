@@ -23,6 +23,32 @@ const normalizePhone = (phone) => {
 };
 
 class EmployeeService {
+  async syncStationAssignment(user, nextStationId) {
+    const previousStationId = user.assignedStation ? String(user.assignedStation) : null;
+    const nextId = nextStationId ? String(nextStationId) : null;
+
+    if (previousStationId && previousStationId !== nextId) {
+      await Station.updateOne(
+        { _id: previousStationId, assignedStaff: user._id },
+        { $set: { assignedStaff: null } }
+      );
+    }
+
+    if (!nextId) return;
+
+    const station = await Station.findById(nextId);
+    if (!station) throw appError('Trạm thu gom không tồn tại.', 404);
+
+    if (station.assignedStaff && String(station.assignedStaff) !== String(user._id)) {
+      await User.updateOne(
+        { _id: station.assignedStaff, assignedStation: station._id },
+        { $set: { assignedStation: null } }
+      );
+    }
+
+    await Station.updateOne({ _id: station._id }, { $set: { assignedStaff: user._id } });
+  }
+
   async list(query = {}) {
     const page = toPositiveInteger(query.page, 1, 100000);
     const limit = toPositiveInteger(query.limit, 20, 100);
@@ -128,6 +154,8 @@ class EmployeeService {
       isActive: payload.isActive !== undefined ? Boolean(payload.isActive) : true,
     });
 
+    if (assignedStation) await this.syncStationAssignment(user, assignedStation);
+
     const item = user.toJSON();
     delete item.password;
     return item;
@@ -136,6 +164,7 @@ class EmployeeService {
   async update(id, payload = {}) {
     if (!mongoose.isValidObjectId(id)) throw appError('Mã nhân viên không hợp lệ.', 400);
     const updateData = {};
+    let nextAssignedStation;
 
     if (payload.name !== undefined) {
       const name = String(payload.name).trim();
@@ -157,6 +186,7 @@ class EmployeeService {
     if (payload.assignedStation !== undefined) {
       if (payload.assignedStation === null || payload.assignedStation === '') {
         updateData.assignedStation = null;
+        nextAssignedStation = null;
       } else {
         if (!mongoose.isValidObjectId(payload.assignedStation)) {
           throw appError('Trạm thu gom không hợp lệ.');
@@ -164,6 +194,7 @@ class EmployeeService {
         const station = await Station.findById(payload.assignedStation);
         if (!station) throw appError('Trạm thu gom không tồn tại.', 404);
         updateData.assignedStation = station._id;
+        nextAssignedStation = station._id;
       }
     }
 
@@ -183,6 +214,15 @@ class EmployeeService {
       const pass = String(payload.password).trim();
       if (pass.length < 8) throw appError('Mật khẩu phải từ 8 ký tự.');
       updateData.password = await bcrypt.hash(pass, 10);
+    }
+
+    const existing = await User.findById(id);
+    if (!existing || !['staff', 'admin'].includes(existing.role)) {
+      throw appError('Không tìm thấy nhân viên.', 404);
+    }
+
+    if (payload.assignedStation !== undefined) {
+      await this.syncStationAssignment(existing, nextAssignedStation);
     }
 
     const updated = await User.findByIdAndUpdate(
