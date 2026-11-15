@@ -2,8 +2,12 @@
  * Unit tests for isolated business logic / AI services / Image validation / Offline Sync / Feedback / Dataset
  */
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
+const modelRegistryTestDir = fs.mkdtempSync(path.join(os.tmpdir(), 'scanwaste-model-registry-'));
+process.env.NODE_ENV = 'test';
+process.env.MODEL_REGISTRY_TEST_ARTIFACT_DIR = modelRegistryTestDir;
 const { AIAdapterFactory, MockAIAdapter } = require('../../src/modules/ai/ai.adapter');
 const { SUPPORTED_WASTE_CLASSES, WASTE_CLASSES_VI, AI_CONFIG } = require('../../src/modules/ai/ai.config');
 const { isValidImageMagicBytes } = require('../../src/middlewares/imageValidation.middleware');
@@ -311,7 +315,7 @@ const runUnitTests = async () => {
   }
 
   // Test non-TFLite flatbuffer header validation
-  const dummyNonTflite = path.resolve('models/dummy_invalid.tflite');
+  const dummyNonTflite = path.join(modelRegistryTestDir, 'dummy_invalid.tflite');
   try {
     fs.writeFileSync(dummyNonTflite, Buffer.from('NOT_A_VALID_TFLITE_MODEL_FLATBUFFER'));
     await modelRegistryService.registerModel({
@@ -319,7 +323,7 @@ const runUnitTests = async () => {
       body: {
         modelName: 'Test Invalid Magic',
         version: 'v4_bad_magic',
-        artifactPath: 'models/dummy_invalid.tflite',
+        artifactPath: dummyNonTflite,
       },
     });
     console.error('✖ Expected invalid TFLite magic header to fail');
@@ -336,6 +340,8 @@ const runUnitTests = async () => {
       fs.unlinkSync(dummyNonTflite);
     }
   }
+
+  fs.rmSync(modelRegistryTestDir, { recursive: true, force: true });
 
   // Test path traversal attempt in model artifactPath
   try {

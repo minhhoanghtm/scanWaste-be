@@ -21,6 +21,21 @@ services:
         value: 7d
       - key: REDIS_URL
         sync: false
+      # Gmail API uses HTTPS, which works on Render Free. SMTP and Brevo remain available.
+      - key: EMAIL_PROVIDER
+        value: gmail_api
+      - key: GMAIL_OAUTH_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REFRESH_TOKEN
+        sync: false
+      - key: GMAIL_SENDER_EMAIL
+        sync: false
+      - key: GMAIL_SENDER_NAME
+        value: ScanWaste
+      - key: EMAIL_SEND_TIMEOUT_MS
+        value: "10000"
       - key: AI_SERVICE_URL
         value: http://127.0.0.1:5005
       - key: AI_PROVIDER
