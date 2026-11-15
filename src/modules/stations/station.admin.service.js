@@ -40,6 +40,34 @@ async function updateWithLog({ id, actorId, action, allowedFrom, buildUpdate, in
 }
 
 class StationAdminService {
+  async syncAssignedStaff(station, nextStaffId) {
+    const previousStaffId = station.assignedStaff ? String(station.assignedStaff) : null;
+    const nextId = nextStaffId ? String(nextStaffId) : null;
+
+    if (previousStaffId && previousStaffId !== nextId) {
+      await User.updateOne(
+        { _id: previousStaffId, assignedStation: station._id },
+        { $set: { assignedStation: null } }
+      );
+    }
+
+    if (!nextId) return;
+
+    const staff = await User.findById(nextId);
+    if (!staff || !['staff', 'admin'].includes(staff.role)) {
+      throw fail(404, 'STAFF_NOT_FOUND', 'Không tìm thấy nhân viên để phân công');
+    }
+
+    if (staff.assignedStation && String(staff.assignedStation) !== String(station._id)) {
+      await Station.updateOne(
+        { _id: staff.assignedStation, assignedStaff: staff._id },
+        { $set: { assignedStaff: null } }
+      );
+    }
+
+    await User.updateOne({ _id: staff._id }, { $set: { assignedStation: station._id } });
+  }
+
   /** UC012 – toàn bộ trạm, % sức chứa cao nhất lên đầu, kèm số liệu tổng hợp */
   async listStations({ status } = {}) {
     if (status && !STATION_STATUSES.includes(status)) {
@@ -105,7 +133,8 @@ class StationAdminService {
     if (!mongoose.isValidObjectId(id)) throw fail(400, 'INVALID_ID', 'ID trạm không hợp lệ');
     const station = await Station.findById(id).populate('assignedStaff', 'name email phone employeeCode role');
     if (!station) throw fail(404, 'STATION_NOT_FOUND', 'Không tìm thấy trạm');
-    return station.toJSON();
+    if (assignedStaff) await this.syncAssignedStaff(station, assignedStaff);
+    return (await Station.findById(station._id).populate('assignedStaff', 'name email phone employeeCode role')).toJSON();
   }
 
   async createStation(payload = {}) {
@@ -168,6 +197,7 @@ class StationAdminService {
     if (!station) throw fail(404, 'STATION_NOT_FOUND', 'Không tìm thấy trạm');
 
     const update = {};
+    let nextAssignedStaff;
     if (payload.name !== undefined) update.name = String(payload.name).trim();
     if (payload.address !== undefined) update.address = String(payload.address).trim();
     if (payload.phoneNumber !== undefined) update.phoneNumber = String(payload.phoneNumber).trim();
@@ -198,9 +228,17 @@ class StationAdminService {
     if (payload.assignedStaff !== undefined) {
       if (!payload.assignedStaff) {
         update.assignedStaff = null;
+        nextAssignedStaff = null;
       } else if (mongoose.isValidObjectId(payload.assignedStaff)) {
         update.assignedStaff = payload.assignedStaff;
+        nextAssignedStaff = payload.assignedStaff;
+      } else {
+        throw fail(400, 'INVALID_STAFF_ID', 'Nhân viên được phân công không hợp lệ');
       }
+    }
+
+    if (payload.assignedStaff !== undefined) {
+      await this.syncAssignedStaff(station, nextAssignedStaff);
     }
 
     const updated = await Station.findByIdAndUpdate(

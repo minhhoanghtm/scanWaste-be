@@ -217,6 +217,19 @@ describe('Admin Management Suite - Voucher, Reward, Employee, Station & Dashboar
     });
     assert.equal(updated.name, 'Trạm Thu Gom Thử Nghiệm Thủ Đức - Nâng cấp');
 
+    // Assignment must remain consistent whichever admin screen initiated it.
+    await employeeService.update(createdEmployeeId, { assignedStation: station.id });
+    const assignedUser = await User.findById(createdEmployeeId).lean();
+    const assignedStation = await Station.findById(station.id).lean();
+    assert.equal(String(assignedUser.assignedStation), String(station.id));
+    assert.equal(String(assignedStation.assignedStaff), String(createdEmployeeId));
+
+    await stationAdminService.updateStation(station.id, { assignedStaff: null });
+    const releasedUser = await User.findById(createdEmployeeId).lean();
+    const releasedStation = await Station.findById(station.id).lean();
+    assert.equal(releasedUser.assignedStation, null);
+    assert.equal(releasedStation.assignedStaff, null);
+
     // Excel Export
     const workbook = await stationAdminService.exportExcel();
     const sheet = workbook.getWorksheet('Danh sách Trạm Thu Gom');
