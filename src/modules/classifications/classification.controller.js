@@ -67,7 +67,8 @@ class ClassificationController {
         await classificationReviewService.reviewClassification(
           req.params.id,
           req.user._id,
-          req.body?.label
+          req.body?.label,
+          req.body?.notes
         );
 
       return sendSuccess(
@@ -76,6 +77,19 @@ class ClassificationController {
         result,
         200
       );
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  // Admin export review queue to Excel
+  async exportReviewQueue(req, res, next) {
+    try {
+      const workbook = await classificationReviewService.exportReviewQueueExcel();
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=review-queue.xlsx');
+      await workbook.xlsx.write(res);
+      res.end();
     } catch (error) {
       return next(error);
     }

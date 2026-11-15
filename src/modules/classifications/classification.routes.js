@@ -35,6 +35,14 @@ router.get(
   classificationController.getReviewQueue
 );
 
+// UC011: Admin exports classification review queue to Excel
+router.get(
+  '/admin/review-queue/export',
+  authMiddleware,
+  adminMiddleware,
+  classificationController.exportReviewQueue
+);
+
 // UC011: Admin reviews or relabels classification
 router.patch(
   '/admin/:id/review',

@@ -46,6 +46,7 @@ const stationSchema = new mongoose.Schema(
     capacityPercent: { type: Number, required: true, min: 0, max: 100 },
     status: { type: String, enum: STATION_STATUSES, default: 'ACTIVE', index: true },
     phoneNumber: { type: String, trim: true, maxlength: 32 },
+    assignedStaff: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     /** Thời điểm dữ liệu sức chứa được cập nhật (mô phỏng telemetry RVM) */
     capacityUpdatedAt: { type: Date, default: Date.now },
     /** Tên + địa chỉ đã bỏ dấu để tìm kiếm (tự tính khi lưu) */
