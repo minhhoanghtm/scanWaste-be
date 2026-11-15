@@ -193,8 +193,14 @@ class ModelRegistryService {
       path.resolve(process.cwd(), 'models'),
       path.resolve(process.cwd(), 'uploads'),
     ];
+    // Unit tests may supply a writable OS temp directory. This is never enabled in
+    // production and keeps the production artifact boundary limited to models/uploads.
+    if (process.env.NODE_ENV === 'test' && process.env.MODEL_REGISTRY_TEST_ARTIFACT_DIR) {
+      allowedRoots.push(path.resolve(process.env.MODEL_REGISTRY_TEST_ARTIFACT_DIR));
+    }
     const isPathAllowed = allowedRoots.some((allowedRoot) =>
-      absoluteArtifactPath.startsWith(allowedRoot)
+      absoluteArtifactPath === allowedRoot || (!path.relative(allowedRoot, absoluteArtifactPath).startsWith('..')
+        && !path.isAbsolute(path.relative(allowedRoot, absoluteArtifactPath)))
     );
     if (!isPathAllowed) {
       const err = new Error(

@@ -37,7 +37,7 @@ async function requestVerification(user) {
   if (user.emailVerified) return { alreadyVerified: true };
   await cooldown('verify-email', user.email);
   const sent = await deliver('verify-email', user);
-  if (!sent) throw error('Email service unavailable. Please request a new code later.', 503, 'EMAIL_NOT_CONFIGURED');
+  if (!sent) throw error('Email service unavailable. Please request a new code later.', 503, 'EMAIL_DELIVERY_UNAVAILABLE');
   return { sent: true, expiresIn: env.OTP_TTL_SECONDS };
 }
 async function requestReset(emailInput) {

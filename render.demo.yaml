@@ -43,6 +43,8 @@ services:
         sync: false
       - key: BREVO_SENDER_NAME
         value: EcoSort AI
+      - key: EMAIL_SEND_TIMEOUT_MS
+        value: "10000"
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: SOCIAL_PUBLIC_ORIGIN
