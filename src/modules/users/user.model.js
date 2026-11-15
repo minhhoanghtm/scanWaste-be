@@ -33,8 +33,28 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
+      enum: ['user', 'admin', 'staff'],
       default: 'user',
+    },
+    assignedStation: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Station',
+      default: null,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
+    employeeCode: {
+      type: String,
+      trim: true,
+      sparse: true,
+    },
+    department: {
+      type: String,
+      trim: true,
+      default: '',
     },
 
     avatarUrl: { type: String, default: '' },

@@ -1,5 +1,6 @@
 
 const mongoose = require('mongoose');
+const ExcelJS = require('exceljs');
 
 const Classification = require('./classification.model');
 const userService = require('../users/user.service');
@@ -188,6 +189,8 @@ class ClassificationReviewService {
           classification.pointsAwarded = true;
         }
 
+        classification.reviewNotes = typeof notes === 'string' ? notes.trim() : '';
+
         // Save review result in the same transaction as point update.
         await classification.save({ session });
 
@@ -198,6 +201,67 @@ class ClassificationReviewService {
     }
 
     return reviewedResult;
+  }
+
+  // Export review queue to Excel
+  async exportReviewQueueExcel() {
+    const query = {
+      verifiedByAdmin: { $ne: true },
+      $or: [
+        { confidence: { $lt: REVIEW_CONFIDENCE_THRESHOLD } },
+        { reportedIncorrect: true },
+        { reviewStatus: 'pending' },
+      ],
+    };
+
+    const items = await Classification.find(query).sort({ createdAt: 1 }).populate('userId', 'name email').lean();
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'ScanWaste Admin';
+    workbook.created = new Date();
+
+    const sheet = workbook.addWorksheet('Hang doi duyet AI');
+
+    sheet.columns = [
+      { header: 'STT', key: 'stt', width: 8 },
+      { header: 'Mã quét', key: 'id', width: 26 },
+      { header: 'Người gửi', key: 'user', width: 24 },
+      { header: 'Nhãn AI dự đoán', key: 'predictedClass', width: 20 },
+      { header: 'Độ tin cậy AI', key: 'confidence', width: 16 },
+      { header: 'Lý do cần duyệt', key: 'reason', width: 28 },
+      { header: 'Thời gian quét', key: 'createdAt', width: 22 },
+    ];
+
+    const headerRow = sheet.getRow(1);
+    headerRow.font = { name: 'Calibri', bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF00B88A' },
+    };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+    headerRow.height = 24;
+
+    items.forEach((item, idx) => {
+      let reason = 'Độ tin cậy thấp';
+      if (item.reportedIncorrect) reason = 'Người dùng báo sai';
+      else if (item.reviewStatus === 'pending') reason = 'Chờ quản trị duyệt';
+
+      const row = sheet.addRow({
+        stt: idx + 1,
+        id: String(item._id),
+        user: item.userId?.name || 'Thành viên',
+        predictedClass: item.predictedClass || 'Chưa rõ',
+        confidence: `${Math.round((item.confidence || 0) * 100)}%`,
+        reason,
+        createdAt: new Date(item.createdAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+      });
+      row.alignment = { vertical: 'middle' };
+      row.getCell('stt').alignment = { vertical: 'middle', horizontal: 'center' };
+      row.getCell('confidence').alignment = { vertical: 'middle', horizontal: 'center' };
+    });
+
+    return workbook;
   }
 }
 

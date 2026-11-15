@@ -41,6 +41,54 @@ class StationAdminController {
       next(error);
     }
   }
+
+  async getById(req, res, next) {
+    try {
+      const result = await stationAdminService.getById(req.params.id);
+      return sendSuccess(res, 'Lấy chi tiết trạm thành công', result, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async create(req, res, next) {
+    try {
+      const result = await stationAdminService.createStation(req.body);
+      return sendSuccess(res, 'Tạo trạm thu gom thành công', result, 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async update(req, res, next) {
+    try {
+      const result = await stationAdminService.updateStation(req.params.id, req.body);
+      return sendSuccess(res, 'Cập nhật trạm thu gom thành công', result, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async delete(req, res, next) {
+    try {
+      const result = await stationAdminService.deleteStation(req.params.id);
+      return sendSuccess(res, 'Xóa trạm thu gom thành công', result, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async exportExcel(req, res, next) {
+    try {
+      const workbook = await stationAdminService.exportExcel(req.query);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=stations-report.xlsx');
+      await workbook.xlsx.write(res);
+      res.end();
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new StationAdminController();

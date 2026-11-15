@@ -104,31 +104,31 @@ class EsgReportController {
       workbook.created = new Date();
 
       // Sheet 1: Overview
-      const overview = workbook.addWorksheet('Tong quan');
+      const overview = workbook.addWorksheet('Tổng quan');
 
       overview.columns = [
-        { header: 'Chi so', key: 'metric', width: 32 },
-        { header: 'Gia tri', key: 'value', width: 25 },
-        { header: 'Trang thai', key: 'status', width: 22 },
-        { header: 'Ghi chu', key: 'note', width: 65 },
+        { header: 'Chỉ số', key: 'metric', width: 32 },
+        { header: 'Giá trị', key: 'value', width: 25 },
+        { header: 'Trạng thái', key: 'status', width: 22 },
+        { header: 'Ghi chú', key: 'note', width: 65 },
       ];
 
       overview.addRow({
-        metric: 'Bao cao ESG - EcoSort AI',
+        metric: 'Báo cáo ESG - ScanWaste',
       });
 
       overview.addRow({
-        metric: 'Tu ngay',
+        metric: 'Từ ngày',
         value: report.period.from,
       });
 
       overview.addRow({
-        metric: 'Den ngay',
+        metric: 'Đến ngày',
         value: report.period.to,
       });
 
       overview.addRow({
-        metric: 'Mui gio',
+        metric: 'Múi giờ',
         value: report.period.timeZone,
       });
 
@@ -136,46 +136,46 @@ class EsgReportController {
 
       overview.addRows([
         {
-          metric: 'Tong luot quet',
+          metric: 'Tổng lượt quét',
           value: report.summary.totalScans,
-          status: 'Available',
-          note: 'Tinh tu Classification.createdAt',
+          status: 'Khả dụng',
+          note: 'Tính từ Classification.createdAt',
         },
         {
-          metric: 'Tong diem da cap',
-          value: 'Chua co du lieu',
-          status: 'Unavailable',
+          metric: 'Tổng điểm đã cấp',
+          value: 'Chưa có dữ liệu',
+          status: 'Chưa khả dụng',
           note: report.notes.pointsIssued,
         },
         {
-          metric: 'Voucher da doi',
-          value: 'Chua co du lieu',
-          status: 'Unavailable',
+          metric: 'Voucher đã đổi',
+          value: 'Chưa có dữ liệu',
+          status: 'Chưa khả dụng',
           note: report.notes.vouchersRedeemed,
         },
         {
-          metric: 'Khoi luong rac (kg)',
-          value: 'Chua co du lieu',
-          status: 'Unavailable',
+          metric: 'Khối lượng rác (kg)',
+          value: 'Chưa có dữ liệu',
+          status: 'Chưa khả dụng',
           note: report.notes.wasteWeightKg,
         },
         {
-          metric: 'CO2 giam thai (kg)',
-          value: 'Chua co du lieu',
-          status: 'Unavailable',
+          metric: 'CO2 giảm thải (kg)',
+          value: 'Chưa có dữ liệu',
+          status: 'Chưa khả dụng',
           note: report.notes.co2ReducedKg,
         },
       ]);
 
-      overview.getRow(1).font = { bold: true, size: 14 };
+      overview.getRow(1).font = { bold: true, size: 14, color: { argb: 'FF00B88A' } };
       overview.getRow(6).font = { bold: true };
 
       // Sheet 2: Waste classification breakdown
-      const categorySheet = workbook.addWorksheet('Phan loai rac');
+      const categorySheet = workbook.addWorksheet('Phân loại rác');
 
       categorySheet.columns = [
-        { header: 'Loai rac', key: 'wasteClass', width: 30 },
-        { header: 'So luot', key: 'count', width: 20 },
+        { header: 'Loại rác', key: 'wasteClass', width: 30 },
+        { header: 'Số lượt', key: 'count', width: 20 },
       ];
 
       Object.entries(report.summary.byWasteClass).forEach(
@@ -188,11 +188,11 @@ class EsgReportController {
       );
 
       // Sheet 3: Daily statistics
-      const dailySheet = workbook.addWorksheet('Thong ke theo ngay');
+      const dailySheet = workbook.addWorksheet('Thống kê theo ngày');
 
       dailySheet.columns = [
-        { header: 'Ngay', key: 'date', width: 22 },
-        { header: 'So luot quet', key: 'count', width: 20 },
+        { header: 'Ngày', key: 'date', width: 22 },
+        { header: 'Số lượt quét', key: 'count', width: 20 },
       ];
 
       report.dailyScans.forEach((item) => {
@@ -200,24 +200,24 @@ class EsgReportController {
       });
 
       // Sheet 4: Data notes
-      const notesSheet = workbook.addWorksheet('Ghi chu');
+      const notesSheet = workbook.addWorksheet('Ghi chú');
 
       notesSheet.columns = [
-        { header: 'Chi so', key: 'metric', width: 30 },
-        { header: 'Ghi chu', key: 'note', width: 90 },
+        { header: 'Chỉ số', key: 'metric', width: 30 },
+        { header: 'Ghi chú', key: 'note', width: 90 },
       ];
 
       notesSheet.addRows([
         {
-          metric: 'Thoi gian',
-          note: 'Du lieu duoc loc theo ngay Viet Nam (Asia/Ho_Chi_Minh).',
+          metric: 'Thời gian',
+          note: 'Dữ liệu được lọc theo múi giờ Việt Nam (Asia/Ho_Chi_Minh).',
         },
         {
-          metric: 'Luot quet',
+          metric: 'Lượt quét',
           note: report.notes.classificationDate,
         },
         {
-          metric: 'Diem thuong',
+          metric: 'Điểm thưởng',
           note: report.notes.pointsIssued,
         },
         {
@@ -225,7 +225,7 @@ class EsgReportController {
           note: report.notes.vouchersRedeemed,
         },
         {
-          metric: 'Khoi luong rac',
+          metric: 'Khối lượng rác',
           note: report.notes.wasteWeightKg,
         },
         {
