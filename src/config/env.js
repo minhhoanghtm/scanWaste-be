@@ -33,6 +33,7 @@ const env = {
   BREVO_API_KEY: process.env.BREVO_API_KEY || '',
   BREVO_SENDER_EMAIL: process.env.BREVO_SENDER_EMAIL || '',
   BREVO_SENDER_NAME: process.env.BREVO_SENDER_NAME || 'EcoSort AI',
+  EMAIL_SEND_TIMEOUT_MS: Number(process.env.EMAIL_SEND_TIMEOUT_MS || 10000),
   SMTP_HOST: process.env.SMTP_HOST || '',
   SMTP_PORT: Number(process.env.SMTP_PORT || 587),
   SMTP_SECURE: process.env.SMTP_SECURE === 'true',
@@ -40,6 +41,14 @@ const env = {
   SMTP_PASS: process.env.SMTP_PASS || '',
   SMTP_FROM: process.env.SMTP_FROM || '',
   GOOGLE_CLIENT_ID: (process.env.GOOGLE_CLIENT_ID || '').trim(),
+  // GMAIL_OAUTH_CLIENT_ID is preferred so Gmail delivery credentials do not alter
+  // the public OAuth client used by the optional social-login flow. GOOGLE_CLIENT_ID
+  // remains a documented compatibility fallback for existing deployments.
+  GMAIL_OAUTH_CLIENT_ID: (process.env.GMAIL_OAUTH_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '').trim(),
+  GOOGLE_CLIENT_SECRET: (process.env.GOOGLE_CLIENT_SECRET || '').trim(),
+  GOOGLE_REFRESH_TOKEN: (process.env.GOOGLE_REFRESH_TOKEN || '').trim(),
+  GMAIL_SENDER_EMAIL: (process.env.GMAIL_SENDER_EMAIL || '').trim(),
+  GMAIL_SENDER_NAME: (process.env.GMAIL_SENDER_NAME || 'ScanWaste').trim(),
   SOCIAL_PUBLIC_ORIGIN: (process.env.SOCIAL_PUBLIC_ORIGIN || 'http://localhost:5173').replace(/\/$/, ''),
   MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE, 10) || 5 * 1024 * 1024, // 5MB
   UPLOAD_DIR: process.env.UPLOAD_DIR || 'uploads',
@@ -48,9 +57,10 @@ const env = {
   INFERENCE_TIMEOUT_MS: parseInt(process.env.INFERENCE_TIMEOUT_MS, 10) || 5000,
 };
 
-for (const field of ['REFRESH_TTL_SECONDS', 'OTP_TTL_SECONDS', 'OTP_RESEND_SECONDS']) {
+for (const field of ['REFRESH_TTL_SECONDS', 'OTP_TTL_SECONDS', 'OTP_RESEND_SECONDS', 'EMAIL_SEND_TIMEOUT_MS']) {
   if (!Number.isSafeInteger(env[field]) || env[field] < 1) throw new Error(`${field} must be a positive integer`);
 }
+if (env.EMAIL_SEND_TIMEOUT_MS > 30000) throw new Error('EMAIL_SEND_TIMEOUT_MS must not exceed 30000');
 if (env.NODE_ENV === 'production' && !process.env.OTP_SECRET?.trim()) {
   throw new Error('OTP_SECRET must be configured in production');
 }

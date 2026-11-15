@@ -233,10 +233,14 @@ test('HTTP rate limiter also fails closed with 503 when Redis cannot be reached'
   const child = spawnSync(process.execPath, ['-e', `
     const app = require('./src/app');
     const s = app.listen(0, '127.0.0.1', async () => {
+      let exitCode;
       try {
         const r = await fetch('http://127.0.0.1:'+s.address().port+'/api/users/me');
-        process.exit(r.status===503 ? 0 : 4);
-      } catch { process.exit(5); }
+        exitCode = r.status===503 ? 0 : 4;
+      } catch { exitCode = 5; }
+      await new Promise(resolve => s.close(resolve));
+      await require('./src/config/redis').closeRedis();
+      process.exitCode = exitCode;
     });
   `], { cwd: process.cwd(), env: { ...process.env, REDIS_URL: 'redis://127.0.0.1:1' }, timeout: 10000 });
   assert.equal(child.status, 0, String(child.stderr));

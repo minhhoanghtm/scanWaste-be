@@ -8,12 +8,18 @@ const unavailable = () => Object.assign(new Error('Authentication storage unavai
 async function getRedis() {
   if (!client) {
     client = createClient({ url: env.REDIS_URL, disableOfflineQueue: true,
-      socket: { connectTimeout: 10000, reconnectStrategy: (retries) => retries >= 3 ? false : Math.min(500 * (retries + 1), 2000) } });
+      // Fail a request closed promptly. The next request creates a fresh connection attempt.
+      socket: { connectTimeout: 3000, reconnectStrategy: () => false } });
     // Never log Redis URLs, commands or credentials.
     client.on('error', () => {});
   }
   if (!client.isReady) {
-    if (!connecting) connecting = client.connect().finally(() => { connecting = undefined; });
+    if (!connecting) connecting = client.connect().catch((err) => {
+      // A failed client cannot be reused reliably; the next request gets one fresh attempt.
+      if (client?.isOpen) client.destroy();
+      client = undefined;
+      throw err;
+    }).finally(() => { connecting = undefined; });
     try { await connecting; } catch { throw unavailable(); }
   }
   return client;
