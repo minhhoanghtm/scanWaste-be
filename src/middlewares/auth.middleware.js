@@ -25,6 +25,10 @@ const authMiddleware = async (req, res, next) => {
       return sendError(res, 'User belonging to this token no longer exists.', [], 401, 'UNAUTHORIZED');
     }
 
+    if (user.isActive === false) {
+      return sendError(res, 'Tài khoản đã bị vô hiệu hóa hoặc khóa.', [], 403, 'ACCOUNT_LOCKED');
+    }
+
     await require('../modules/auth/auth.session').validate(decoded, user);
     req.auth = decoded;
     req.user = user;

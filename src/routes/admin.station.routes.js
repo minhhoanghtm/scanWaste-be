@@ -4,13 +4,14 @@ const stationAdminController = require('../modules/stations/station.admin.contro
 const authMiddleware = require('../middlewares/auth.middleware');
 const adminMiddleware = require('../middlewares/admin.middleware');
 
-/**
- * Admin Station Monitoring APIs (UC012)
- * Mọi route yêu cầu JWT + role admin (giống admin.ai.routes.js).
- */
 router.use(authMiddleware, adminMiddleware);
 
 router.get('/', stationAdminController.list);
+router.get('/export', stationAdminController.exportExcel);
+router.get('/:id', stationAdminController.getById);
+router.post('/', stationAdminController.create);
+router.patch('/:id', stationAdminController.update);
+router.delete('/:id', stationAdminController.delete);
 router.patch('/:id/status', stationAdminController.updateStatus);
 router.patch('/:id/capacity', stationAdminController.simulateCapacity);
 

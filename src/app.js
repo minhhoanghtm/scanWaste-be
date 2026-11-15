@@ -12,6 +12,7 @@ const helmet = require('helmet');
 const { apiLimiter } = require('./middlewares/rateLimit.middleware');
 
 const app = express();
+app.set('etag', false);
 
 // Security HTTP headers
 app.use(

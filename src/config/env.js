@@ -9,7 +9,8 @@ try {
   // Ignore if environment forbids custom DNS servers
 }
 
-// Load environment variables from .env file
+// Load environment variables from .env file (resolved relative to backend root)
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET?.trim()) {

@@ -14,6 +14,10 @@ const stationRoutes = require('../modules/stations/station.routes');
 
 const adminAiRoutes = require('./admin.ai.routes');
 const adminStationRoutes = require('./admin.station.routes');
+const adminRewardRoutes = require('./admin.reward.routes');
+const adminVoucherRoutes = require('./admin.voucher.routes');
+const adminEmployeeRoutes = require('./admin.employee.routes');
+const adminDashboardRoutes = require('./admin.dashboard.routes');
 const docsRoutes = require('../docs/docs.routes');
 
 const router = express.Router();
@@ -46,8 +50,12 @@ router.use('/ai', aiRoutes);
 router.use('/stations', stationRoutes);
 
 // Admin routes
+router.use('/admin/dashboard', adminDashboardRoutes);
 router.use('/admin/ai', adminAiRoutes);
 router.use('/admin/stations', adminStationRoutes);
+router.use('/admin/rewards', adminRewardRoutes);
+router.use('/admin/vouchers', adminVoucherRoutes);
+router.use('/admin/employees', adminEmployeeRoutes);
 router.use('/admin/reports', esgReportRoutes);
 
 module.exports = router;

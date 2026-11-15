@@ -19,6 +19,9 @@ local-mailbox/
 # Local browser test screenshots
 docs/ui-evidence/
 
+# Local QA evidence and generated reports
+/report/
+
 # Private deployment environment files
 .env.*
 !.env.example

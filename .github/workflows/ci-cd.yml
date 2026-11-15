@@ -58,10 +58,10 @@ jobs:
         ports:
           - 27017:27017
         options: >-
-          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-cmd "mongosh --eval 'db.adminCommand({ping:1})'"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
 
     strategy:
       matrix:
@@ -108,6 +108,15 @@ jobs:
           done
 
       - name: 🔬 Chạy Unit Tests (AI Adapter & Logic cô lập)
+        # admin-management.test.js performs real Mongoose CRUD, so it needs
+        # its own isolated database even though it is included in test:unit.
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://127.0.0.1:27017/scanwaste_ci_admin_test
+          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/scanwaste_ci_admin_test
+          REDIS_URL: redis://127.0.0.1:6379
+          JWT_SECRET: ci_pipeline_super_secret_jwt_key_2026
+          OTP_SECRET: ci_pipeline_otp_secret_key_2026
         run: npm run test:unit
 
       - name: 🔐 Chạy Auth API Tests
