@@ -1,4 +1,4 @@
-require('../../src/config/env');
+const env = require('../../src/config/env');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const User = require('../../src/modules/users/user.model');
@@ -7,7 +7,12 @@ const authSession = require('../../src/modules/auth/auth.session');
 
 async function seedTestUsers() {
   if (mongoose.connection.readyState !== 1) {
-    await mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 15000 });
+    const mongoUri =
+      process.env.TEST_MONGODB_URI ||
+      process.env.MONGODB_URI ||
+      env.MONGODB_URI ||
+      'mongodb://127.0.0.1:27017/scanwaste_ci_admin_test';
+    await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 15000 });
   }
 
   const hashedPassword = await bcrypt.hash('Password123!', 10);

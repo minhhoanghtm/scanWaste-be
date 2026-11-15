@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const mongoose = require('mongoose');
 
 // Ensure DNS and env are properly initialized
-require('../../src/config/env');
+const env = require('../../src/config/env');
 
 const User = require('../../src/modules/users/user.model');
 const Station = require('../../src/modules/stations/station.model');
@@ -17,6 +17,12 @@ const employeeService = require('../../src/modules/employees/employee.service');
 const stationAdminService = require('../../src/modules/stations/station.admin.service');
 const dashboardService = require('../../src/modules/statistics/dashboard.service');
 
+const TEST_DB_URI =
+  process.env.TEST_MONGODB_URI ||
+  process.env.MONGODB_URI ||
+  env.MONGODB_URI ||
+  'mongodb://127.0.0.1:27017/scanwaste_ci_admin_test';
+
 describe('Admin Management Suite - Voucher, Reward, Employee, Station & Dashboard', () => {
   let createdVoucherId;
   let createdRewardMongoId;
@@ -25,21 +31,28 @@ describe('Admin Management Suite - Voucher, Reward, Employee, Station & Dashboar
 
   before(async () => {
     if (mongoose.connection.readyState !== 1) {
-      await mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 15000 });
+      await mongoose.connect(TEST_DB_URI, { serverSelectionTimeoutMS: 15000 });
     }
   });
 
   after(async () => {
-    // Clean up test entities
-    if (createdVoucherId) await Voucher.findByIdAndDelete(createdVoucherId);
-    if (createdRewardMongoId) await Reward.findByIdAndDelete(createdRewardMongoId);
-    if (createdEmployeeId) await User.findByIdAndDelete(createdEmployeeId);
-    if (createdStationId) await Station.findByIdAndDelete(createdStationId);
-    await User.deleteMany({ email: /^test-emp-.*@example\.com$/ });
-    await Voucher.deleteMany({ code: /^TEST-VOUCHER-/ });
-    await Station.deleteMany({ code: /^test-st-/ });
-    await Reward.deleteMany({ id: /^TEST-RWD-/ });
-    await mongoose.disconnect();
+    try {
+      // Clean up test entities
+      if (mongoose.connection.readyState === 1) {
+        if (createdVoucherId) await Voucher.findByIdAndDelete(createdVoucherId);
+        if (createdRewardMongoId) await Reward.findByIdAndDelete(createdRewardMongoId);
+        if (createdEmployeeId) await User.findByIdAndDelete(createdEmployeeId);
+        if (createdStationId) await Station.findByIdAndDelete(createdStationId);
+        await User.deleteMany({ email: /^test-emp-.*@example\.com$/ });
+        await Voucher.deleteMany({ code: /^TEST-VOUCHER-/ });
+        await Station.deleteMany({ code: /^test-st-/ });
+        await Reward.deleteMany({ id: /^TEST-RWD-/ });
+      }
+    } finally {
+      if (mongoose.connection.readyState !== 0) {
+        await mongoose.disconnect();
+      }
+    }
   });
 
   // 1. Voucher Management
